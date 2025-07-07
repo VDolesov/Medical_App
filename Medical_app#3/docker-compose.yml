@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: pg-medical
+    environment:
+      POSTGRES_DB: medical_app
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1944
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./medical-backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: ./medical-backend
+    container_name: backend-medical
+    environment:
+      PGUSER: postgres
+      PGPASSWORD: 1944
+      PGHOST: host.docker.internal
+      PGDATABASE: medical_app
+      PGPORT: 5432
+      JWT_SECRET: your_jwt_secret
+      ADMIN_SECRET: 1111
+      NODE_ENV: production
+    depends_on:
+      - db
+    ports:
+      - "5000:5000"
+
+  frontend:
+    build: ./medical-frontend
+    container_name: frontend-medical
+    environment:
+      DANGEROUSLY_DISABLE_HOST_CHECK: 'true'
+
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
