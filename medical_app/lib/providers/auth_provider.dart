@@ -30,7 +30,7 @@ class User {
 }
 
 class AuthProvider with ChangeNotifier {
-  static const String _baseUrl = 'http://10.0.2.2:5000'; // Для Android эмулятора
+  static const String _baseUrl = 'https://medicalprojects-production.up.railway.app'; // Для продакшена на Railway
   // static const String _baseUrl = 'http://localhost:5000'; // Для iOS симулятора
   // static const String _baseUrl = 'http://192.168.1.100:5000'; // Для реального устройства
 
