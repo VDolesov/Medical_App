@@ -114,6 +114,13 @@ Thumbs.db
 
 # Docker
 .dockerignore
+docker-compose.yml
+docker-compose.override.yml
+**/docker-compose.yml
+**/docker-compose.override.yml
+# Keep example file
+!docker-compose.example.yml
+!**/docker-compose.example.yml
 
 # Temporary files
 *.tmp
