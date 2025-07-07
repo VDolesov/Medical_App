@@ -38,7 +38,7 @@ const swaggerOptions = {
       description: 'API для загрузки и анализа медицинских анализов',
     },
     servers: [
-      { url: 'http://localhost:5000' },
+      { url: 'https://medicalprojects-production.up.railway.app' },
     ],
     components: {
       securitySchemes: {
