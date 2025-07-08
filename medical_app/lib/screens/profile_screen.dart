@@ -89,7 +89,7 @@ class ProfileScreen extends StatelessWidget {
                       ListTile(
                         leading: const Icon(Icons.person_outline),
                         title: const Text('Имя пользователя'),
-                        subtitle: Text(user.username),
+                        // subtitle: Text(user.username),
                         trailing: const Icon(Icons.copy, size: 20),
                         onTap: () {
                           // Копирование в буфер обмена
@@ -105,7 +105,7 @@ class ProfileScreen extends StatelessWidget {
                       ListTile(
                         leading: const Icon(Icons.email_outlined),
                         title: const Text('Email'),
-                        subtitle: Text('${user.username}@example.com'), // Заглушка
+                        // subtitle: Text(' 24{user.username}@example.com'), // Заглушка
                         trailing: const Icon(Icons.copy, size: 20),
                         onTap: () {
                           ScaffoldMessenger.of(context).showSnackBar(

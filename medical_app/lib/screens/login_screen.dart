@@ -304,27 +304,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : 'Уже есть аккаунт? Войти',
                           ),
                         ),
-
-                        // Тестовые данные
-                        const SizedBox(height: 24),
-                        const Divider(),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Тестовые данные:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Врач: doctor1 / 123456\nАдмин: admin / 123456',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12,
-                          ),
-                        ),
                       ],
                     ),
                   ),
