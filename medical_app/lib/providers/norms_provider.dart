@@ -48,7 +48,7 @@ class Norm {
 }
 
 class NormsProvider with ChangeNotifier {
-  static const String _baseUrl = 'http://10.0.2.2:5000';
+  static const String _baseUrl = 'https://medicalprojects-production.up.railway.app';
 
   List<Norm> _norms = [];
   bool _isLoading = false;

@@ -84,7 +84,7 @@ class PatientReport {
 }
 
 class ReportsProvider with ChangeNotifier {
-  static const String _baseUrl = 'http://10.0.2.2:5000';
+  static const String _baseUrl = 'https://medicalprojects-production.up.railway.app';
 
   List<Report> _reports = [];
   List<PatientReport> _currentReport = [];
