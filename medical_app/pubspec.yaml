@@ -2,7 +2,7 @@ name: medical_app
 description: "Медицинское приложение для анализа данных пациентов"
 publish_to: 'none'
 
-version: 1.0.3
+version: 1.0.0+2
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
