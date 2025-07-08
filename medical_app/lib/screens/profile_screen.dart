@@ -309,6 +309,10 @@ class ProfileScreen extends StatelessWidget {
               Navigator.pop(context);
               final authProvider = context.read<AuthProvider>();
               await authProvider.logout();
+              // Переход на экран входа после выхода
+              if (context.mounted) {
+                Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Выйти'),

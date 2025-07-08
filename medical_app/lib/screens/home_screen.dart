@@ -33,6 +33,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 onSelected: (value) async {
                   if (value == 'logout') {
                     await authProvider.logout();
+                    if (context.mounted) {
+                      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                    }
                   }
                 },
                 itemBuilder: (context) => [
