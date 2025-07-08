@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:label="medical_app"
+        android:label="Анализ медицинских данных"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
