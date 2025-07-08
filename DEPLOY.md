@@ -32,7 +32,7 @@ ADMIN_SECRET=1111
 3. Получите URL вашего API (например: https://your-app.railway.app)
 
 ## Шаг 5: Обновление Flutter приложения
-
+            
 Обновите URL в `lib/providers/auth_provider.dart`:
 
 ```dart

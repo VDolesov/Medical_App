@@ -15,7 +15,18 @@ const swaggerJsdoc = require('swagger-jsdoc');
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+
+// Настройка CORS для production
+const corsOptions = {
+  origin: [
+    'https://medicalreactfrontend-production.up.railway.app',
+    'http://localhost:3000',
+    'http://localhost:3001'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const ADMIN_SECRET = process.env.ADMIN_SECRET;

@@ -10,7 +10,7 @@ plugins {
 
 android {
     ndkVersion = "28.1.13356709"
-    namespace = "com.example.medical_app"
+    namespace = "ru.valdolesov.medicalapp"
     compileSdk = flutter.compileSdkVersion
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -24,7 +24,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.medical_app"
+        applicationId = "ru.valdolesov.medicalapp"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
