@@ -1,0 +1,117 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-chat-threads
+      author: medical-app
+      changes:
+        - createTable:
+            tableName: chat_threads
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              # patient_user_id хранит ID пользователя-инициатора диалога:
+              # - для PATIENT↔DOCTOR это users.id пациента,
+              # - для ADMIN↔DOCTOR это users.id админа (схема переиспользуется).
+              - column: { name: patient_user_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: doctor_user_id, type: BIGINT, constraints: { nullable: false } }
+              # patient_id — связка с конкретным пациентом из таблицы patients,
+              # имеет смысл только для PATIENT↔DOCTOR; для ADMIN↔DOCTOR — NULL.
+              - column: { name: patient_id, type: BIGINT }
+              - column: { name: subject, type: VARCHAR(256) }
+              - column: { name: closed, type: BOOLEAN, defaultValueBoolean: false, constraints: { nullable: false } }
+              - column: { name: patient_blocked_at, type: TIMESTAMP }
+              - column: { name: doctor_blocked_at, type: TIMESTAMP }
+              - column: { name: last_message_at, type: TIMESTAMP }
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+                  constraints: { nullable: false }
+        - addForeignKeyConstraint:
+            baseTableName: chat_threads
+            baseColumnNames: patient_user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_chat_threads_patient_user
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: chat_threads
+            baseColumnNames: doctor_user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_chat_threads_doctor_user
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: chat_threads
+            baseColumnNames: patient_id
+            referencedTableName: patients
+            referencedColumnNames: id
+            constraintName: fk_chat_threads_patient
+            onDelete: SET NULL
+        - addUniqueConstraint:
+            tableName: chat_threads
+            columnNames: patient_user_id, doctor_user_id
+            constraintName: uq_chat_threads_pair
+        - createIndex:
+            indexName: idx_chat_threads_doctor
+            tableName: chat_threads
+            columns:
+              - column: { name: doctor_user_id }
+        - createIndex:
+            indexName: idx_chat_threads_patient_user
+            tableName: chat_threads
+            columns:
+              - column: { name: patient_user_id }
+
+  - changeSet:
+      id: 005-chat-messages
+      author: medical-app
+      changes:
+        - createTable:
+            tableName: chat_messages
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: thread_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: sender_user_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: sender_role, type: VARCHAR(16), constraints: { nullable: false } }
+              - column: { name: body, type: TEXT, constraints: { nullable: false } }
+              - column: { name: linked_report_id, type: BIGINT }
+              - column: { name: linked_rule_execution_id, type: BIGINT }
+              - column: { name: read_by_recipient, type: BOOLEAN, defaultValueBoolean: false, constraints: { nullable: false } }
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+                  constraints: { nullable: false }
+        - addForeignKeyConstraint:
+            baseTableName: chat_messages
+            baseColumnNames: thread_id
+            referencedTableName: chat_threads
+            referencedColumnNames: id
+            constraintName: fk_chat_messages_thread
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: chat_messages
+            baseColumnNames: sender_user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_chat_messages_sender
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: chat_messages
+            baseColumnNames: linked_report_id
+            referencedTableName: analysis_reports
+            referencedColumnNames: id
+            constraintName: fk_chat_messages_report
+            onDelete: SET NULL
+        - addForeignKeyConstraint:
+            baseTableName: chat_messages
+            baseColumnNames: linked_rule_execution_id
+            referencedTableName: rule_executions
+            referencedColumnNames: id
+            constraintName: fk_chat_messages_rule_exec
+            onDelete: SET NULL
+        - createIndex:
+            indexName: idx_chat_messages_thread_created
+            tableName: chat_messages
+            columns:
+              - column: { name: thread_id }
+              - column: { name: created_at }
