@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: medical-app
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+
+  flyway:
+    enabled: false
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:medical-app-jwt-secret-key-at-least-32-chars}
+      expiration-ms: ${JWT_EXPIRATION_MS:28800000}
+
+  admin-secret: ${ADMIN_SECRET:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: medical-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-medical}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-1944}
+    # Наружу проброшен 5433, чтобы не конфликтовать с нативным PostgreSQL,
+    # который у разработчика может быть установлен на 5432.
+    # Внутри Docker-сети контейнер app всё равно ходит к postgres:5432.
+    ports:
+      - "5433:5432"
+    volumes:
+      - medical_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: medical-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-medical}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-1944}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  medical_pgdata:
