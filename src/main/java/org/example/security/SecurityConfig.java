@@ -36,6 +36,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                     auth.requestMatchers("/register", "/login", "/ping").permitAll();
+                    // Health-проба для оркестратора (Railway healthcheck) — без авторизации.
+                    // Остальные actuator-эндпоинты остаются закрытыми.
+                    auth.requestMatchers("/actuator/health", "/actuator/health/**").permitAll();
                     if (publicSwaggerEnabled) {
                         auth.requestMatchers("/api-docs/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll();
                     }

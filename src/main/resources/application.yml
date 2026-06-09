@@ -20,7 +20,9 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
 server:
-  port: ${SERVER_PORT:8080}
+  # Railway (и многие PaaS) пробрасывают порт через переменную PORT.
+  # Локально PORT не задан — падаем на SERVER_PORT, затем на 8080.
+  port: ${PORT:${SERVER_PORT:8080}}
   shutdown: graceful
 
 app:
