@@ -17,7 +17,7 @@ public final class SeedDemoAccounts {
 
     private static final String DEFAULT_URL = "jdbc:postgresql://localhost:5433/medical";
     private static final String DEFAULT_USER = "postgres";
-    private static final String DEFAULT_PASS = "1944";
+    private static final String DEFAULT_PASS = "postgres";
 
     private static final String PASSWORD = env("SEED_PASSWORD", "123");
     private static final int PATIENT_COUNT = Integer.parseInt(env("SEED_PATIENTS", "30"));
