@@ -5,6 +5,13 @@ spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
+  servlet:
+    multipart:
+      # Дефолт Spring — 1MB, что меньше прикладного лимита загрузки XLSX (10MB).
+      # Без этого файлы 1-10 МБ падали бы с невнятной ошибкой ещё до контроллера.
+      max-file-size: 10MB
+      max-request-size: 12MB
+
   jpa:
     open-in-view: false
     hibernate:
@@ -24,11 +31,17 @@ server:
   # Локально PORT не задан — падаем на SERVER_PORT, затем на 8080.
   port: ${PORT:${SERVER_PORT:8080}}
   shutdown: graceful
+  # За реверс-прокси (Railway/nginx) реальные схема и IP клиента приходят
+  # в X-Forwarded-* заголовках — без этого rate-limit и редиректы видят прокси.
+  forward-headers-strategy: framework
 
 app:
   security:
     jwt:
-      secret: ${JWT_SECRET:medical-app-jwt-secret-key-at-least-32-chars}
+      # Дефолта намеренно нет: публично известный fallback-секрет в репозитории
+      # позволил бы подделать любой токен. Прод без JWT_SECRET падает на старте
+      # (проверка в JwtUtil), dev-значение задано в application-dev.yml.
+      secret: ${JWT_SECRET:}
       expiration-ms: ${JWT_EXPIRATION_MS:28800000}
 
   admin-secret: ${ADMIN_SECRET:}

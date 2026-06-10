@@ -460,11 +460,10 @@ class ConditionEvaluatorTest {
         }
 
         @Test
-        @DisplayName("ХАРАКТЕРИСТИКА: lt/lte при отсутствующем факте ложно срабатывают — асимметрия операторов")
-        void comparison_missingFact_ltFamilyFailsOpen() {
-
-            assertThat(evaluator.evaluate(leaf("tsh_post", "lt", 0.1), facts()).matched()).isTrue();
-            assertThat(evaluator.evaluate(leaf("tsh_post", "lte", 0.1), facts()).matched()).isTrue();
+        @DisplayName("lt/lte при отсутствующем факте не срабатывают (fail-closed, симметрично gt/gte)")
+        void comparison_missingFact_ltFamilyFailsClosed() {
+            assertThat(evaluator.evaluate(leaf("tsh_post", "lt", 0.1), facts()).matched()).isFalse();
+            assertThat(evaluator.evaluate(leaf("tsh_post", "lte", 0.1), facts()).matched()).isFalse();
         }
     }
 }

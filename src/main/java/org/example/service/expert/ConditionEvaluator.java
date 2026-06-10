@@ -92,10 +92,10 @@ public final class ConditionEvaluator {
             case "absent" -> factValue == null;
             case "eq" -> equalsLoose(factValue, expected);
             case "neq" -> factValue != null && !equalsLoose(factValue, expected);
-            case "gt" -> compareNumeric(factValue, expected) > 0;
-            case "gte" -> compareNumeric(factValue, expected) >= 0;
-            case "lt" -> compareNumeric(factValue, expected) < 0;
-            case "lte" -> compareNumeric(factValue, expected) <= 0;
+            case "gt" -> compareNumeric(factValue, expected, c -> c > 0);
+            case "gte" -> compareNumeric(factValue, expected, c -> c >= 0);
+            case "lt" -> compareNumeric(factValue, expected, c -> c < 0);
+            case "lte" -> compareNumeric(factValue, expected, c -> c <= 0);
             case "in" -> inList(factValue, expectedList);
             case "not_in" -> factValue != null && !inList(factValue, expectedList);
             case "range" -> inRange(factValue, expectedList, true);
@@ -118,13 +118,16 @@ public final class ConditionEvaluator {
         return Objects.equals(String.valueOf(a), String.valueOf(b));
     }
 
-    private static int compareNumeric(Object a, Object b) {
+    // Fail-closed: при отсутствующем или нечисловом факте сравнение НЕ срабатывает,
+    // независимо от оператора. Иначе правило «кальций ниже нормы» ложно срабатывало бы
+    // у пациента, которому кальций вообще не измеряли.
+    private static boolean compareNumeric(Object a, Object b, java.util.function.IntPredicate cmp) {
         Double x = toDouble(a);
         Double y = toDouble(b);
         if (x == null || y == null) {
-            return Integer.MIN_VALUE / 2;
+            return false;
         }
-        return Double.compare(x, y);
+        return cmp.test(Double.compare(x, y));
     }
 
     private static Double toDouble(Object o) {

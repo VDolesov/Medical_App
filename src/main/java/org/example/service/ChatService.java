@@ -213,6 +213,9 @@ public class ChatService {
         if (body == null || body.isBlank()) {
             throw new IllegalArgumentException("Пустое сообщение");
         }
+        if (body.trim().length() > 4000) {
+            throw new IllegalArgumentException("Сообщение слишком длинное: максимум 4000 символов");
+        }
         User sender = userRepository.findById(currentUserId).orElseThrow();
         ChatMessage m = new ChatMessage();
         m.setThreadId(threadId);

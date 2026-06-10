@@ -131,12 +131,12 @@ class UserValidationTest {
     }
 
     @Nested
-    @DisplayName("requireStrongPassword (текущая политика — проверка длины)")
+    @DisplayName("requireStrongPassword (минимум 8 символов, буквы и цифры)")
     class PasswordValidation {
 
         @ParameterizedTest
-        @ValueSource(strings = {"1944", "qwerty", "P@ssw0rd", "очень длинный пароль"})
-        @DisplayName("непустой пароль допустимой длины принимается")
+        @ValueSource(strings = {"StrongPass123", "a1234567", "Пароль123", "P@ssw0rd"})
+        @DisplayName("пароль от 8 символов с буквой и цифрой принимается")
         void validPasswords_accepted(String password) {
             assertThatCode(() -> UserValidation.requireStrongPassword(password)).doesNotThrowAnyException();
         }
@@ -151,16 +151,38 @@ class UserValidationTest {
         }
 
         @Test
+        @DisplayName("пароль короче 8 символов отклоняется")
+        void tooShortPassword_rejected() {
+            assertThatThrownBy(() -> UserValidation.requireStrongPassword("abc1234"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("8");
+        }
+
+        @Test
+        @DisplayName("пароль без цифр отклоняется")
+        void passwordWithoutDigit_rejected() {
+            assertThatThrownBy(() -> UserValidation.requireStrongPassword("longpassword"))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        @DisplayName("пароль без букв отклоняется")
+        void passwordWithoutLetter_rejected() {
+            assertThatThrownBy(() -> UserValidation.requireStrongPassword("12345678"))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
         @DisplayName("пароль ровно 128 символов — граничный допустимый случай")
         void password128Chars_accepted() {
-            assertThatCode(() -> UserValidation.requireStrongPassword("x".repeat(128)))
+            assertThatCode(() -> UserValidation.requireStrongPassword("a1".repeat(64)))
                     .doesNotThrowAnyException();
         }
 
         @Test
         @DisplayName("пароль длиннее 128 символов отклоняется")
         void tooLongPassword_rejected() {
-            assertThatThrownBy(() -> UserValidation.requireStrongPassword("x".repeat(129)))
+            assertThatThrownBy(() -> UserValidation.requireStrongPassword("a1".repeat(64) + "x"))
                     .isInstanceOf(IllegalArgumentException.class);
         }
     }

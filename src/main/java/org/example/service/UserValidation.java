@@ -37,12 +37,19 @@ final class UserValidation {
     }
 
     static void requireStrongPassword(String password) {
-
         if (password == null || password.isEmpty()) {
             throw new IllegalArgumentException("Password must not be empty");
         }
+        if (password.length() < 8) {
+            throw new IllegalArgumentException("Минимальная длина пароля — 8 символов");
+        }
         if (password.length() > 128) {
-            throw new IllegalArgumentException("Password must be at most 128 characters");
+            throw new IllegalArgumentException("Максимальная длина пароля — 128 символов");
+        }
+        boolean hasLetter = password.chars().anyMatch(Character::isLetter);
+        boolean hasDigit = password.chars().anyMatch(Character::isDigit);
+        if (!hasLetter || !hasDigit) {
+            throw new IllegalArgumentException("Пароль должен содержать хотя бы одну букву и одну цифру");
         }
     }
 

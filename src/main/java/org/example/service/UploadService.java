@@ -19,6 +19,10 @@ public class UploadService {
     private static final String COL_CODE = "Код пациента";
     private static final String COL_AGE = "Возраст";
 
+    // Потолок строк: разбор XLSX держит весь отчёт в памяти, файл на сотни тысяч
+    // строк уронил бы инстанс по OOM. Реальные выгрузки лаборатории — сотни строк.
+    private static final int MAX_ROWS = 5000;
+
     private static final Map<String, ExtraField> EXTRA_FIELDS = new LinkedHashMap<>();
 
     static {
@@ -67,6 +71,9 @@ public class UploadService {
             Row headerRow = sheet.getRow(0);
             if (headerRow == null) {
                 throw new IllegalArgumentException("Пустой файл");
+            }
+            if (sheet.getLastRowNum() > MAX_ROWS) {
+                throw new IllegalArgumentException("Слишком много строк в файле: максимум " + MAX_ROWS);
             }
             List<String> headers = new ArrayList<>();
             for (Cell c : headerRow) {
