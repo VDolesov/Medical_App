@@ -178,6 +178,15 @@ public class PatientAnalyticsService {
             if (u.getPatientId() == null || !u.getPatientId().equals(patientId)) {
                 throw new IllegalArgumentException("Not found");
             }
+        } else if (!MeController.isAdmin()) {
+            // Врач видит историю только своих (закреплённых за ним) пациентов.
+            // Без этой проверки любой врач мог читать риск-историю чужого пациента,
+            // перебирая последовательные patientId (IDOR / межврачебная утечка медданных).
+            Patient p = patientRepository.findById(patientId)
+                    .orElseThrow(() -> new IllegalArgumentException("Not found"));
+            if (!Objects.equals(p.getAttendingDoctorUserId(), userId)) {
+                throw new IllegalArgumentException("Not found");
+            }
         }
         List<ReportPatient> rps = reportPatientRepository.findByPatientIdOrderByReportCreatedAtDesc(patientId);
         List<PatientHistoryEntryDto> out = new ArrayList<>();
