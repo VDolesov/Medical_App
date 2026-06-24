@@ -12,6 +12,15 @@ spring:
       max-file-size: 10MB
       max-request-size: 12MB
 
+  datasource:
+    hikari:
+      pool-name: medical-pool
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
   jpa:
     open-in-view: false
     hibernate:
@@ -33,13 +42,20 @@ spring:
       spec: maximumSize=500,expireAfterWrite=600s
 
 server:
-  # Railway (и многие PaaS) пробрасывают порт через переменную PORT.
-  # Локально PORT не задан — падаем на SERVER_PORT, затем на 8080.
   port: ${PORT:${SERVER_PORT:8080}}
   shutdown: graceful
-  # За реверс-прокси (Railway/nginx) реальные схема и IP клиента приходят
-  # в X-Forwarded-* заголовках — без этого rate-limit и редиректы видят прокси.
   forward-headers-strategy: framework
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/plain,text/css,application/javascript
+    min-response-size: 1024
+  tomcat:
+    threads:
+      max: ${TOMCAT_THREADS_MAX:50}
+      min-spare: 5
+    accept-count: 100
+    max-connections: 2000
+    connection-timeout: 20000
 
 app:
   security:
