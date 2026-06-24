@@ -26,6 +26,12 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
+  cache:
+    type: caffeine
+    cache-names: norms
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=600s
+
 server:
   # Railway (и многие PaaS) пробрасывают порт через переменную PORT.
   # Локально PORT не задан — падаем на SERVER_PORT, затем на 8080.
