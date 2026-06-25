@@ -71,13 +71,14 @@ public class PatientAnalyticsService {
                 : analyticsRepository.findByReportPatientIdIn(ids).stream()
                 .collect(Collectors.toMap(PatientAiAnalytics::getReportPatientId, a -> a));
 
+        Map<Long, Patient> patientsById = loadPatients(links);
         long low = 0, med = 0, high = 0;
         int sum = 0;
         int n = 0;
         List<ScorePointDto> points = new ArrayList<>();
         for (ReportPatient rp : links) {
             PatientAiAnalytics a = byRp.get(rp.getId());
-            Patient p = patientRepository.findById(rp.getPatientId()).orElse(null);
+            Patient p = patientsById.get(rp.getPatientId());
             String code = p != null ? p.getCode() : "?";
             if (a != null) {
                 sum += a.getRiskScore();
