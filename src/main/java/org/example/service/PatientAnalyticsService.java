@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -302,44 +303,65 @@ public class PatientAnalyticsService {
     }
 
     private List<AnalyticsViewDto> buildViews(AnalysisReport report, Long onlyPatientId) {
-        List<AnalyticsViewDto> out = new ArrayList<>();
         List<ReportPatient> links = reportPatientRepository.findByReportIdOrderBySortOrderAsc(report.getId());
+        List<ReportPatient> selected = new ArrayList<>();
         for (ReportPatient rp : links) {
             if (onlyPatientId != null && !onlyPatientId.equals(rp.getPatientId())) {
                 continue;
             }
-            out.add(buildView(rp));
+            selected.add(rp);
+        }
+        Map<Long, Patient> patientsById = loadPatients(selected);
+        Map<Long, PatientAiAnalytics> analyticsByRp = loadAnalytics(selected);
+        List<AnalyticsViewDto> out = new ArrayList<>(selected.size());
+        for (ReportPatient rp : selected) {
+            out.add(buildView(rp, patientsById.get(rp.getPatientId()), analyticsByRp.get(rp.getId())));
         }
         return out;
     }
 
     private AnalyticsViewDto buildView(ReportPatient rp) {
         Patient patient = patientRepository.findById(rp.getPatientId()).orElse(null);
-        String code = patient != null ? patient.getCode() : "?";
-        Integer age = patient != null ? patient.getAge() : null;
+        PatientAiAnalytics analytics = analyticsRepository.findByReportPatientId(rp.getId()).orElse(null);
+        return buildView(rp, patient, analytics);
+    }
 
+    private AnalyticsViewDto buildView(ReportPatient rp, Patient patient, PatientAiAnalytics analytics) {
         AnalyticsViewDto v = new AnalyticsViewDto();
         v.reportPatientId = rp.getId();
-        v.patientCode = code;
-        v.age = age;
+        v.patientCode = patient != null ? patient.getCode() : "?";
+        v.age = patient != null ? patient.getAge() : null;
         v.sortOrder = rp.getSortOrder();
-
-        Optional<PatientAiAnalytics> opt = analyticsRepository.findByReportPatientId(rp.getId());
-        if (opt.isPresent()) {
-            PatientAiAnalytics a = opt.get();
-            v.riskScore = a.getRiskScore();
-            v.riskLevel = a.getRiskLevel();
-            v.features = a.getFeaturesJson();
-            v.explanationText = a.getExplanationText();
-            v.createdAt = a.getCreatedAt() != null ? a.getCreatedAt().toString() : null;
-        } else {
-            v.riskScore = null;
-            v.riskLevel = null;
-            v.features = null;
-            v.explanationText = null;
-            v.createdAt = null;
+        if (analytics != null) {
+            v.riskScore = analytics.getRiskScore();
+            v.riskLevel = analytics.getRiskLevel();
+            v.features = analytics.getFeaturesJson();
+            v.explanationText = analytics.getExplanationText();
+            v.createdAt = analytics.getCreatedAt() != null ? analytics.getCreatedAt().toString() : null;
         }
         return v;
+    }
+
+    private Map<Long, Patient> loadPatients(List<ReportPatient> links) {
+        List<Long> ids = links.stream().map(ReportPatient::getPatientId).filter(Objects::nonNull).distinct().toList();
+        Map<Long, Patient> map = new HashMap<>();
+        if (!ids.isEmpty()) {
+            for (Patient p : patientRepository.findAllById(ids)) {
+                map.put(p.getId(), p);
+            }
+        }
+        return map;
+    }
+
+    private Map<Long, PatientAiAnalytics> loadAnalytics(List<ReportPatient> links) {
+        List<Long> rpIds = links.stream().map(ReportPatient::getId).toList();
+        Map<Long, PatientAiAnalytics> map = new HashMap<>();
+        if (!rpIds.isEmpty()) {
+            for (PatientAiAnalytics a : analyticsRepository.findByReportPatientIdIn(rpIds)) {
+                map.put(a.getReportPatientId(), a);
+            }
+        }
+        return map;
     }
 
     private AnalysisReport loadOwnedReport(Long reportId, Long userId) {
