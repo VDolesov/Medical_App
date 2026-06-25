@@ -10,12 +10,14 @@ import org.example.model.ClinicalRule;
 import org.example.model.ClinicalSource;
 import org.example.service.AdminExpertService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 @RestController
 @Tag(name = OpenApiConfig.TAG_ADMIN_KNOWLEDGE)
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminExpertController {
 
     private final AdminExpertService adminExpertService;
@@ -38,7 +40,6 @@ public class AdminExpertController {
             @ApiResponse(responseCode = "403", description = "Не администратор")
     })
     public ResponseEntity<?> createRule(@RequestBody Map<String, Object> body) {
-        if (!isAdmin()) return forbidden();
         try {
             ClinicalRule r = adminExpertService.create(body);
             return ResponseEntity.ok(Map.of("id", r.getId(), "code", r.getCode()));
@@ -60,7 +61,6 @@ public class AdminExpertController {
     public ResponseEntity<?> updateRule(
             @Parameter(description = "ID правила") @PathVariable Long id,
             @RequestBody Map<String, Object> body) {
-        if (!isAdmin()) return forbidden();
         try {
             ClinicalRule r = adminExpertService.update(id, body);
             return ResponseEntity.ok(Map.of("id", r.getId(), "code", r.getCode()));
@@ -81,7 +81,6 @@ public class AdminExpertController {
     public ResponseEntity<?> toggleRule(
             @Parameter(description = "ID правила") @PathVariable Long id,
             @RequestBody(required = false) Map<String, Object> body) {
-        if (!isAdmin()) return forbidden();
         boolean active = body != null && Boolean.TRUE.equals(body.get("active"));
         try {
             ClinicalRule r = adminExpertService.setActive(id, active);
@@ -101,7 +100,6 @@ public class AdminExpertController {
             @ApiResponse(responseCode = "404", description = "Правило не найдено")
     })
     public ResponseEntity<?> deleteRule(@Parameter(description = "ID правила") @PathVariable Long id) {
-        if (!isAdmin()) return forbidden();
         try {
             adminExpertService.delete(id);
             return ResponseEntity.ok(Map.of("deleted", id));
@@ -115,7 +113,6 @@ public class AdminExpertController {
             summary = "Список источников знаний (для админа)",
             description = "Возвращает Клинические Рекомендации с возможностью редактирования.")
     public ResponseEntity<?> listSources() {
-        if (!isAdmin()) return forbidden();
         return ResponseEntity.ok(adminExpertService.listSources());
     }
 
@@ -128,7 +125,6 @@ public class AdminExpertController {
             @ApiResponse(responseCode = "400", description = "Дубликат code или невалидные поля")
     })
     public ResponseEntity<?> createSource(@RequestBody Map<String, Object> body) {
-        if (!isAdmin()) return forbidden();
         try {
             ClinicalSource s = adminExpertService.createSource(body);
             return ResponseEntity.ok(Map.of("id", s.getId(), "code", s.getCode()));
@@ -148,7 +144,6 @@ public class AdminExpertController {
     public ResponseEntity<?> updateSource(
             @Parameter(description = "ID источника") @PathVariable Long id,
             @RequestBody Map<String, Object> body) {
-        if (!isAdmin()) return forbidden();
         try {
             ClinicalSource s = adminExpertService.updateSource(id, body);
             return ResponseEntity.ok(Map.of("id", s.getId(), "code", s.getCode()));
@@ -157,11 +152,4 @@ public class AdminExpertController {
         }
     }
 
-    private static boolean isAdmin() {
-        return MeController.currentUserId() != null && MeController.isAdmin();
-    }
-
-    private static ResponseEntity<?> forbidden() {
-        return ResponseEntity.status(403).body(Map.of("error", "Доступ только для администратора"));
-    }
 }

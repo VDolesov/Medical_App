@@ -21,6 +21,7 @@ import org.example.repository.RuleExecutionRepository;
 import org.example.repository.UserRepository;
 import org.example.service.expert.ExpertSystemService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -72,10 +73,8 @@ public class ExpertController {
             @ApiResponse(responseCode = "200", description = "Массив правил, отсортирован по приоритету"),
             @ApiResponse(responseCode = "403", description = "Роль PATIENT")
     })
+    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
     public ResponseEntity<?> listRules() {
-        if (MeController.hasRole(Role.PATIENT)) {
-            return ResponseEntity.status(403).body(Map.of("error", "Доступно врачу или администратору"));
-        }
         Map<Long, ClinicalSource> sources = new HashMap<>();
         for (ClinicalSource s : sourceRepository.findAll()) {
             sources.put(s.getId(), s);
@@ -112,10 +111,8 @@ public class ExpertController {
             @ApiResponse(responseCode = "200", description = "Массив источников"),
             @ApiResponse(responseCode = "403", description = "Роль PATIENT")
     })
+    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
     public ResponseEntity<?> listSources() {
-        if (MeController.hasRole(Role.PATIENT)) {
-            return ResponseEntity.status(403).body(Map.of("error", "Доступно врачу или администратору"));
-        }
         return ResponseEntity.ok(sourceRepository.findAll());
     }
 
@@ -203,11 +200,9 @@ public class ExpertController {
             @ApiResponse(responseCode = "403", description = "Роль PATIENT или нет доступа"),
             @ApiResponse(responseCode = "404", description = "Строка отчёта не найдена")
     })
+    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
     public ResponseEntity<?> reEvaluate(
             @Parameter(description = "ID строки отчёта") @PathVariable Long reportPatientId) {
-        if (MeController.hasRole(Role.PATIENT)) {
-            return ResponseEntity.status(403).body(Map.of("error", "Пересчёт доступен врачу или администратору"));
-        }
         ReportPatient rp = reportPatientRepository.findById(reportPatientId).orElse(null);
         if (rp == null) {
             return ResponseEntity.status(404).body(Map.of("error", "Not found"));

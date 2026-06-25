@@ -7,10 +7,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.example.config.OpenApiConfig;
 import org.example.model.ReportPatient;
-import org.example.model.enums.Role;
 import org.example.repository.ReportPatientRepository;
 import org.example.service.PatientAnalyticsService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -127,10 +127,8 @@ public class AnalyticsController {
             @ApiResponse(responseCode = "403", description = "Роль PATIENT"),
             @ApiResponse(responseCode = "404", description = "Отчёт не найден")
     })
+    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
     public ResponseEntity<?> generate(@Parameter(description = "ID отчёта") @PathVariable Long id) {
-        if (MeController.hasRole(Role.PATIENT)) {
-            return ResponseEntity.status(403).body(Map.of("error", "Генерация доступна врачу или администратору"));
-        }
         try {
             return ResponseEntity.ok(analyticsService.generateForReport(id, MeController.currentUserId()));
         } catch (IllegalArgumentException e) {

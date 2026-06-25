@@ -6,9 +6,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.example.config.OpenApiConfig;
-import org.example.model.enums.Role;
 import org.example.service.ReportPatientAttachmentService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -38,13 +38,11 @@ public class ReportRowPatientController {
             @ApiResponse(responseCode = "403", description = "Пациент закреплён за другим врачом / роль не DOCTOR"),
             @ApiResponse(responseCode = "404", description = "Отчёт или строка не найдены")
     })
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<?> attachDoctor(
             @Parameter(description = "ID отчёта") @PathVariable Long reportId,
             @Parameter(description = "Индекс строки в отчёте (с 0)") @PathVariable int rowIndex,
             @RequestBody Map<String, String> body) {
-        if (!MeController.hasRole(Role.DOCTOR)) {
-            return ResponseEntity.status(403).body(Map.of("error", "Только для врача"));
-        }
         try {
             attachmentService.attachPatientToRow(reportId, rowIndex, codeOf(body), MeController.currentUserId(), false);
             return ResponseEntity.ok(Map.of("success", true));
@@ -65,12 +63,10 @@ public class ReportRowPatientController {
             @ApiResponse(responseCode = "403", description = "Роль не DOCTOR / нет доступа к отчёту"),
             @ApiResponse(responseCode = "404", description = "Отчёт или строка не найдены")
     })
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<?> detachDoctor(
             @Parameter(description = "ID отчёта") @PathVariable Long reportId,
             @Parameter(description = "Индекс строки") @PathVariable int rowIndex) {
-        if (!MeController.hasRole(Role.DOCTOR)) {
-            return ResponseEntity.status(403).body(Map.of("error", "Только для врача"));
-        }
         try {
             attachmentService.detachPatientFromRow(reportId, rowIndex, MeController.currentUserId(), false);
             return ResponseEntity.ok(Map.of("success", true));
@@ -89,13 +85,11 @@ public class ReportRowPatientController {
             @ApiResponse(responseCode = "403", description = "Роль не ADMIN"),
             @ApiResponse(responseCode = "404", description = "Отчёт или строка не найдены")
     })
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> attachAdmin(
             @Parameter(description = "ID отчёта") @PathVariable Long reportId,
             @Parameter(description = "Индекс строки") @PathVariable int rowIndex,
             @RequestBody Map<String, String> body) {
-        if (!MeController.isAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Требуется администратор"));
-        }
         try {
             attachmentService.attachPatientToRow(reportId, rowIndex, codeOf(body), MeController.currentUserId(), true);
             return ResponseEntity.ok(Map.of("success", true));
@@ -113,12 +107,10 @@ public class ReportRowPatientController {
             @ApiResponse(responseCode = "403", description = "Роль не ADMIN"),
             @ApiResponse(responseCode = "404", description = "Отчёт или строка не найдены")
     })
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> detachAdmin(
             @Parameter(description = "ID отчёта") @PathVariable Long reportId,
             @Parameter(description = "Индекс строки") @PathVariable int rowIndex) {
-        if (!MeController.isAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Требуется администратор"));
-        }
         try {
             attachmentService.detachPatientFromRow(reportId, rowIndex, MeController.currentUserId(), true);
             return ResponseEntity.ok(Map.of("success", true));

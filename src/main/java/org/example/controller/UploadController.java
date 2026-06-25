@@ -8,6 +8,7 @@ import org.example.config.OpenApiConfig;
 import org.example.service.UploadService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -53,10 +54,8 @@ public class UploadController {
             @ApiResponse(responseCode = "403", description = "Роль PATIENT — загрузка запрещена"),
             @ApiResponse(responseCode = "429", description = "Превышен лимит загрузок с одного IP")
     })
+    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
     public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file) throws IOException {
-        if (!MeController.isDoctorOrAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Нет прав на загрузку"));
-        }
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Файл не выбран"));
         }

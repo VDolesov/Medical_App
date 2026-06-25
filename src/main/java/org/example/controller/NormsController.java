@@ -8,6 +8,7 @@ import org.example.config.OpenApiConfig;
 import org.example.dto.NormDto;
 import org.example.service.NormsService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -42,10 +43,8 @@ public class NormsController {
             @ApiResponse(responseCode = "400", description = "Не заполнены обязательные поля"),
             @ApiResponse(responseCode = "403", description = "Не администратор")
     })
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> addNorm(@RequestBody Map<String, Object> body) {
-        if (!MeController.isAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Требуются права администратора"));
-        }
         String name = (String) body.get("name");
         Number minVal = (Number) body.get("min_value");
         Number maxVal = (Number) body.get("max_value");
@@ -68,12 +67,10 @@ public class NormsController {
             @ApiResponse(responseCode = "403", description = "Не администратор"),
             @ApiResponse(responseCode = "404", description = "Норма не найдена")
     })
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateNorm(
             @Parameter(description = "ID нормы") @PathVariable Long id,
             @RequestBody Map<String, Object> body) {
-        if (!MeController.isAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Требуются права администратора"));
-        }
         String name = (String) body.get("name");
         Number minVal = (Number) body.get("min_value");
         Number maxVal = (Number) body.get("max_value");
@@ -99,10 +96,8 @@ public class NormsController {
             @ApiResponse(responseCode = "403", description = "Не администратор"),
             @ApiResponse(responseCode = "404", description = "Норма не найдена")
     })
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteNorm(@Parameter(description = "ID нормы") @PathVariable Long id) {
-        if (!MeController.isAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Требуются права администратора"));
-        }
         try {
             normsService.delete(id);
             return ResponseEntity.ok(Map.of("message", "Норма удалена"));

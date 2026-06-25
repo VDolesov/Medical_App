@@ -10,6 +10,7 @@ import org.example.service.AdminService;
 import org.example.service.PatientDirectoryService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
     private final AdminService adminService;
@@ -38,9 +40,6 @@ public class AdminController {
             @ApiResponse(responseCode = "403", description = "Не администратор")
     })
     public ResponseEntity<?> getAllReports() {
-        if (!MeController.isAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Требуются права администратора"));
-        }
         return ResponseEntity.ok(adminService.getAllReports());
     }
 
@@ -58,9 +57,6 @@ public class AdminController {
             @Parameter(description = "ID отчёта") @PathVariable Long id,
             @Parameter(description = "Номер страницы, с 1") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "50") int limit) {
-        if (!MeController.isAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Требуются права администратора"));
-        }
         try {
             return ResponseEntity.ok(adminService.getReportAdmin(id, page, limit, MeController.currentUserId()));
         } catch (IllegalArgumentException e) {
@@ -78,9 +74,6 @@ public class AdminController {
             @ApiResponse(responseCode = "403", description = "Не администратор")
     })
     public ResponseEntity<?> deleteReport(@Parameter(description = "ID отчёта") @PathVariable Long id) {
-        if (!MeController.isAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Требуются права администратора"));
-        }
         adminService.deleteReportAdmin(id);
         return ResponseEntity.ok(Map.of("message", "Отчёт удалён"));
     }
@@ -95,9 +88,6 @@ public class AdminController {
             @ApiResponse(responseCode = "403", description = "Не администратор")
     })
     public ResponseEntity<?> getAllUsers() {
-        if (!MeController.isAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Требуются права администратора"));
-        }
         return ResponseEntity.ok(adminService.getAllUsers());
     }
 
@@ -114,9 +104,6 @@ public class AdminController {
             @ApiResponse(responseCode = "403", description = "Не администратор")
     })
     public ResponseEntity<?> createUser(@RequestBody Map<String, String> body) {
-        if (!MeController.isAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Требуются права администратора"));
-        }
         String username = body.get("username");
         String password = body.get("password");
         String email = body.get("email");
@@ -148,9 +135,6 @@ public class AdminController {
             @ApiResponse(responseCode = "403", description = "Не администратор")
     })
     public ResponseEntity<?> deleteUser(@Parameter(description = "ID пользователя") @PathVariable Long id) {
-        if (!MeController.isAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Требуются права администратора"));
-        }
         try {
             adminService.deleteUser(id, MeController.currentUserId());
             return ResponseEntity.ok(Map.of("message", "Пользователь удалён"));
@@ -172,9 +156,6 @@ public class AdminController {
     public ResponseEntity<?> updateUser(
             @Parameter(description = "ID пользователя") @PathVariable Long id,
             @RequestBody Map<String, String> body) {
-        if (!MeController.isAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Требуются права администратора"));
-        }
         try {
             adminService.updateUser(
                     id,
@@ -204,9 +185,6 @@ public class AdminController {
             @Parameter(description = "Номер страницы, с 0") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "50") int size,
             @Parameter(description = "Только пациенты с ЛК") @RequestParam(defaultValue = "false") boolean registered_only) {
-        if (!MeController.isAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Требуются права администратора"));
-        }
         Long uid = MeController.currentUserId();
         Page<PatientDirectoryEntryDto> result = patientDirectoryService.list(q, page, size, uid != null ? uid : 0L, true,
                 registered_only);
@@ -232,9 +210,6 @@ public class AdminController {
     public ResponseEntity<?> patchPatientAttending(
             @Parameter(description = "ID пациента") @PathVariable Long id,
             @RequestBody Map<String, Object> body) {
-        if (!MeController.isAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Требуются права администратора"));
-        }
         try {
             Long doctorId = parseNullableLong(body.get("user_id"));
             adminService.setPatientAttendingDoctor(id, doctorId);
@@ -250,9 +225,6 @@ public class AdminController {
             summary = "Список врачей для выпадающего списка",
             description = "Краткие данные врачей (id, ФИО) — используется для выбора лечащего врача при назначении пациенту.")
     public ResponseEntity<?> listDoctors() {
-        if (!MeController.isAdmin()) {
-            return ResponseEntity.status(403).body(Map.of("error", "Требуются права администратора"));
-        }
         return ResponseEntity.ok(adminService.listDoctorsForSelect());
     }
 
