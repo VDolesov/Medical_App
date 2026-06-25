@@ -10,6 +10,7 @@ import 'providers/chat_provider.dart';
 import 'providers/expert_provider.dart';
 import 'providers/reports_provider.dart';
 import 'screens/admin/admin_knowledge_screen.dart';
+import 'screens/admin/admin_norms_screen.dart';
 import 'screens/admin/admin_patients_screen.dart';
 import 'screens/admin/admin_reports_screen.dart';
 import 'screens/admin/admin_screen.dart';
@@ -96,6 +97,7 @@ class _MedicalAppV2State extends State<MedicalAppV2> {
               builder: (_, __) => const AdminScreen(),
               routes: [
                 GoRoute(path: 'knowledge', builder: (_, __) => const AdminKnowledgeScreen()),
+                GoRoute(path: 'norms', builder: (_, __) => const AdminNormsScreen()),
                 GoRoute(path: 'users', builder: (_, __) => const AdminUsersScreen()),
                 GoRoute(path: 'patients', builder: (_, __) => const AdminPatientsScreen()),
                 GoRoute(path: 'reports', builder: (_, __) => const AdminReportsScreen()),

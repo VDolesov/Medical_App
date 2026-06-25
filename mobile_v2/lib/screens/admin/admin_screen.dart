@@ -16,9 +16,11 @@ class AdminScreen extends StatelessWidget {
         body: const Center(child: Text('Доступно только администратору')),
       );
     }
-    final tiles = const [
+    const tiles = [
       _AdminTile('База знаний', 'Клинические правила экспертной системы',
           Icons.psychology_alt_outlined, '/admin/knowledge'),
+      _AdminTile('Нормы анализов', 'Референсные диапазоны показателей: добавить, изменить, удалить',
+          Icons.straighten_outlined, '/admin/norms'),
       _AdminTile('Пользователи', 'Врачи и админы: создание, редактирование, удаление',
           Icons.manage_accounts_outlined, '/admin/users'),
       _AdminTile('Пациенты', 'Закрепление за врачами, лк, поиск',
