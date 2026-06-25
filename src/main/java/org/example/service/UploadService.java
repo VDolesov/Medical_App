@@ -19,8 +19,6 @@ public class UploadService {
     private static final String COL_CODE = "Код пациента";
     private static final String COL_AGE = "Возраст";
 
-    // Потолок строк: разбор XLSX держит весь отчёт в памяти, файл на сотни тысяч
-    // строк уронил бы инстанс по OOM. Реальные выгрузки лаборатории — сотни строк.
     private static final int MAX_ROWS = 5000;
 
     private static final Map<String, ExtraField> EXTRA_FIELDS = new LinkedHashMap<>();
@@ -40,8 +38,6 @@ public class UploadService {
         EXTRA_FIELDS.put("Сопутствующие заболевания ДС", new ExtraField("comorbidity_resp", FieldType.INT));
         EXTRA_FIELDS.put("Интероперационные осложнения", new ExtraField("intraop_complications", FieldType.INT));
         EXTRA_FIELDS.put("Послеоперационный рецидив", new ExtraField("known_recurrence", FieldType.INT));
-        // В исходных датасетах встречаются обе формы заголовка — с одним и с двумя пробелами
-        // перед «системе Bethesda». Маппим оба варианта в одну техническую колонку.
         EXTRA_FIELDS.put("Цитологическая классификация после ТАБ по  системе Bethesda (диагностическая категория от 1 до 5)",
                 new ExtraField("bethesda", FieldType.INT));
         EXTRA_FIELDS.put("Цитологическая классификация после ТАБ по системе Bethesda (диагностическая категория от 1 до 5)",

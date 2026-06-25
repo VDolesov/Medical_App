@@ -7,8 +7,6 @@ spring:
 
   servlet:
     multipart:
-      # Дефолт Spring — 1MB, что меньше прикладного лимита загрузки XLSX (10MB).
-      # Без этого файлы 1-10 МБ падали бы с невнятной ошибкой ещё до контроллера.
       max-file-size: 10MB
       max-request-size: 12MB
 
@@ -60,9 +58,6 @@ server:
 app:
   security:
     jwt:
-      # Дефолта намеренно нет: публично известный fallback-секрет в репозитории
-      # позволил бы подделать любой токен. Прод без JWT_SECRET падает на старте
-      # (проверка в JwtUtil), dev-значение задано в application-dev.yml.
       secret: ${JWT_SECRET:}
       expiration-ms: ${JWT_EXPIRATION_MS:28800000}
 

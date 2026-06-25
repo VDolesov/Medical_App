@@ -21,7 +21,6 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
 
     Page<Patient> findByIdInAndCodeContainingIgnoreCase(Collection<Long> ids, String fragment, Pageable pageable);
 
-    /** Свободный поиск: пациент попадает в выборку если LIKE по коду ИЛИ id входит в nameHits. */
     @Query("""
         SELECT p FROM Patient p
         WHERE LOWER(p.code) LIKE LOWER(CONCAT('%', :q, '%'))
@@ -31,7 +30,6 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
                                                        @Param("q") String fragment,
                                                        Pageable pageable);
 
-    /** Внутри scope: пациент попадает если LIKE по коду ИЛИ id входит в nameHits (оба под scope). */
     @Query("""
         SELECT p FROM Patient p
         WHERE p.id IN :scope

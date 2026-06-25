@@ -26,11 +26,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Регрессия на IDOR в истории риск-аналитики: врач не должен видеть историю
- * пациента, который за ним не закреплён (перебор patientId). Пациент — только свою,
- * админ — любую.
- */
 class PatientAnalyticsServiceAuthorizationTest {
 
     private final AnalysisReportRepository reportRepository = mock(AnalysisReportRepository.class);
@@ -65,7 +60,7 @@ class PatientAnalyticsServiceAuthorizationTest {
         void doctorCannotReadForeignPatient() {
             authenticateAs(5L, "DOCTOR");
             Patient foreign = new Patient();
-            foreign.setAttendingDoctorUserId(7L); // закреплён за другим врачом
+            foreign.setAttendingDoctorUserId(7L);
             when(patientRepository.findById(99L)).thenReturn(Optional.of(foreign));
 
             assertThatThrownBy(() -> service.historyForPatient(99L, 5L))

@@ -57,7 +57,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         if (!allowed) {
-            // 429 Too Many Requests: константы для него в jakarta.servlet.http нет, используем литерал.
             response.setStatus(429);
             response.setContentType("application/json;charset=UTF-8");
             response.getWriter().write("{\"error\":\"Слишком много запросов. Попробуйте позже.\"}");

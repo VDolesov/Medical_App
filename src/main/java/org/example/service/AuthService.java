@@ -31,9 +31,6 @@ public class AuthService {
 
     private static final char[] PATIENT_CODE_SYMBOLS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ".toCharArray();
 
-    // Валидный bcrypt-хэш-заглушка (cost 10) для выравнивания времени ответа при
-    // несуществующем логине. Значение для аутентификации не используется — только
-    // чтобы для любого логина выполнялось одинаковое по времени bcrypt-сравнение.
     private static final String DUMMY_PASSWORD_HASH =
             "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
 
@@ -139,9 +136,6 @@ public class AuthService {
             throw new IllegalArgumentException("Неверный логин или пароль");
         }
         Optional<User> userOpt = userRepository.findByUsernameIgnoreCase(username);
-        // Bcrypt-сравнение выполняется всегда, даже если пользователя нет: иначе ответ
-        // для несуществующего логина приходит заметно быстрее и позволяет перебором
-        // выяснять, какие учётки существуют (user enumeration по таймингу).
         String storedHash = userOpt.map(User::getPasswordHash).orElse(DUMMY_PASSWORD_HASH);
         boolean passwordMatches = passwordEncoder.matches(password, storedHash);
         if (userOpt.isEmpty() || !passwordMatches) {

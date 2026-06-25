@@ -179,9 +179,6 @@ public class PatientAnalyticsService {
                 throw new IllegalArgumentException("Not found");
             }
         } else if (!MeController.isAdmin()) {
-            // Врач видит историю только своих (закреплённых за ним) пациентов.
-            // Без этой проверки любой врач мог читать риск-историю чужого пациента,
-            // перебирая последовательные patientId (IDOR / межврачебная утечка медданных).
             Patient p = patientRepository.findById(patientId)
                     .orElseThrow(() -> new IllegalArgumentException("Not found"));
             if (!Objects.equals(p.getAttendingDoctorUserId(), userId)) {

@@ -36,8 +36,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                     auth.requestMatchers("/register", "/login", "/ping").permitAll();
-                    // Health-проба для оркестратора (Railway healthcheck) — без авторизации.
-                    // Остальные actuator-эндпоинты остаются закрытыми.
                     auth.requestMatchers("/actuator/health", "/actuator/health/**").permitAll();
                     if (publicSwaggerEnabled) {
                         auth.requestMatchers("/api-docs/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll();
@@ -51,9 +49,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Запрос без валидной аутентификации (нет/просрочен/битый JWT) → 401.
-    // По умолчанию Spring Security возвращает 403, что путало клиента и не давало
-    // ему понять, что нужно перевыпустить токен через /login.
     private AuthenticationEntryPoint unauthorizedEntryPoint() {
         return (request, response, authException) -> {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -62,7 +57,6 @@ public class SecurityConfig {
         };
     }
 
-    // Аутентифицирован, но не хватает прав (например, PATIENT на DOCTOR-ручку) → 403.
     private AccessDeniedHandler forbiddenAccessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);

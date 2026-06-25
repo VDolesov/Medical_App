@@ -28,8 +28,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByPatientIdIn(Collection<Long> patientIds);
 
-    // Поиск ЛК пациентов по ФИО для привязки строки отчёта.
-    // Возвращаем patient_id, чтобы дальше отдать в PatientRepository.findByIdIn(...).
     @Query("""
         SELECT u.patientId FROM User u
         WHERE u.patientId IS NOT NULL

@@ -59,7 +59,6 @@ public class PatientDirectoryService {
         } else if (q == null) {
             patients = patientRepository.findAll(pg);
         } else {
-            // Свободный поиск: код пациента ИЛИ ФИО его ЛК-аккаунта.
             Set<Long> nameHits = new HashSet<>(userRepository.findPatientIdsByNameQuery(q));
             patients = searchInScope(null, q, nameHits, pg);
         }
@@ -77,12 +76,6 @@ public class PatientDirectoryService {
         return patients.map(p -> toDto(p, withAccount, viewerUserId, viewerIsAdmin, userByPatient.get(p.getId())));
     }
 
-    /**
-     * Возвращает пациентов из ограничивающего scope (либо все, если scope == null),
-     * чей код LIKE q ИЛИ id входит в nameHits (т.е. ФИО ЛК-аккаунта совпало).
-     * Используем выбор между несколькими репо-методами вместо JOIN, чтобы остаться на
-     * Spring Data без нативки и сохранить пагинацию.
-     */
     private Page<Patient> searchInScope(Set<Long> scope, String q, Set<Long> nameHits, Pageable pg) {
         if (scope == null) {
             if (nameHits.isEmpty()) {

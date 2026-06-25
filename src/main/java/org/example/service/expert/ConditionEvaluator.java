@@ -118,9 +118,6 @@ public final class ConditionEvaluator {
         return Objects.equals(String.valueOf(a), String.valueOf(b));
     }
 
-    // Fail-closed: при отсутствующем или нечисловом факте сравнение НЕ срабатывает,
-    // независимо от оператора. Иначе правило «кальций ниже нормы» ложно срабатывало бы
-    // у пациента, которому кальций вообще не измеряли.
     private static boolean compareNumeric(Object a, Object b, java.util.function.IntPredicate cmp) {
         Double x = toDouble(a);
         Double y = toDouble(b);
