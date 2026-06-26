@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,11 +64,19 @@ public class ExpertSystemService {
 
         executionRepository.deleteAllForReport(reportId);
 
+        Map<Long, Patient> patientsById = new HashMap<>();
+        List<Long> patientIds = links.stream().map(ReportPatient::getPatientId).filter(Objects::nonNull).distinct().toList();
+        if (!patientIds.isEmpty()) {
+            for (Patient p : patientRepository.findAllById(patientIds)) {
+                patientsById.put(p.getId(), p);
+            }
+        }
+
         List<PatientInferenceResult> out = new ArrayList<>(links.size());
         for (ReportPatient rp : links) {
             Map<String, Object> slice = sliceFor(rows, rp.getSortOrder());
             Map<String, Object> prevSlice = previousSliceForPatient(rp.getPatientId(), report);
-            Patient patient = patientRepository.findById(rp.getPatientId()).orElse(null);
+            Patient patient = patientsById.get(rp.getPatientId());
 
             PatientFacts facts = factsBuilder.build(patient, slice, prevSlice);
             List<RuleExecution> triggered = applyRules(rp.getId(), rules, facts);
@@ -97,7 +106,7 @@ public class ExpertSystemService {
     }
 
     private List<RuleExecution> applyRules(Long reportPatientId, List<ClinicalRule> rules, PatientFacts facts) {
-        List<RuleExecution> saved = new ArrayList<>();
+        List<RuleExecution> toSave = new ArrayList<>();
         for (ClinicalRule rule : rules) {
             ConditionEvaluator.EvalResult eval = conditionEvaluator.evaluate(rule.getConditionJson(), facts);
             if (!eval.matched()) {
@@ -112,8 +121,13 @@ public class ExpertSystemService {
             exec.setMatchedFactsJson(eval.matchedFacts());
             exec.setExplanationText(rule.getRationale());
             exec.setPatientExplanationText(rule.getPatientMessage());
-            saved.add(executionRepository.save(exec));
+            toSave.add(exec);
         }
+        if (toSave.isEmpty()) {
+            return List.of();
+        }
+        List<RuleExecution> saved = new ArrayList<>();
+        executionRepository.saveAll(toSave).forEach(saved::add);
         return saved;
     }
 
