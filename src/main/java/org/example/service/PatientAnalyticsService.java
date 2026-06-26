@@ -188,23 +188,34 @@ public class PatientAnalyticsService {
             }
         }
         List<ReportPatient> rps = reportPatientRepository.findByPatientIdOrderByReportCreatedAtDesc(patientId);
+        Map<Long, PatientAiAnalytics> analyticsByRp = loadAnalytics(rps);
+        List<Long> reportIds = rps.stream().map(ReportPatient::getReportId).filter(Objects::nonNull).distinct().toList();
+        Map<Long, AnalysisReport> reportsById = new HashMap<>();
+        if (!reportIds.isEmpty()) {
+            for (AnalysisReport ar : reportRepository.findAllById(reportIds)) {
+                reportsById.put(ar.getId(), ar);
+            }
+        }
         List<PatientHistoryEntryDto> out = new ArrayList<>();
         for (ReportPatient rp : rps) {
-            analyticsRepository.findByReportPatientId(rp.getId()).ifPresent(a -> {
-                AnalysisReport ar = reportRepository.findById(rp.getReportId()).orElse(null);
-                if (ar != null) {
-                    PatientHistoryEntryDto e = new PatientHistoryEntryDto();
-                    e.reportId = ar.getId();
-                    e.reportCreatedAt = ar.getCreatedAt() != null ? ar.getCreatedAt().toString() : null;
-                    e.riskScore = a.getRiskScore();
-                    e.riskLevel = a.getRiskLevel();
-                    e.topFactors = a.getFeaturesJson() != null && a.getFeaturesJson().get("topFactors") instanceof List<?> l
-                            ? l.stream().map(Object::toString).toList()
-                            : List.of();
-                    e.trend = a.getFeaturesJson() != null ? Objects.toString(a.getFeaturesJson().get("trend"), null) : null;
-                    out.add(e);
-                }
-            });
+            PatientAiAnalytics a = analyticsByRp.get(rp.getId());
+            if (a == null) {
+                continue;
+            }
+            AnalysisReport ar = reportsById.get(rp.getReportId());
+            if (ar == null) {
+                continue;
+            }
+            PatientHistoryEntryDto e = new PatientHistoryEntryDto();
+            e.reportId = ar.getId();
+            e.reportCreatedAt = ar.getCreatedAt() != null ? ar.getCreatedAt().toString() : null;
+            e.riskScore = a.getRiskScore();
+            e.riskLevel = a.getRiskLevel();
+            e.topFactors = a.getFeaturesJson() != null && a.getFeaturesJson().get("topFactors") instanceof List<?> l
+                    ? l.stream().map(Object::toString).toList()
+                    : List.of();
+            e.trend = a.getFeaturesJson() != null ? Objects.toString(a.getFeaturesJson().get("trend"), null) : null;
+            out.add(e);
         }
         return out;
     }
