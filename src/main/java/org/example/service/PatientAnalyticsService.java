@@ -36,6 +36,7 @@ public class PatientAnalyticsService {
     private final ReportPatientLinkService reportPatientLinkService;
     private final UserRepository userRepository;
     private final ExpertSystemService expertSystemService;
+    private final PatientReportHistory patientReportHistory;
 
     public PatientAnalyticsService(AnalysisReportRepository reportRepository,
                                    ReportPatientRepository reportPatientRepository,
@@ -43,7 +44,8 @@ public class PatientAnalyticsService {
                                    PatientAiAnalyticsRepository analyticsRepository,
                                    ReportPatientLinkService reportPatientLinkService,
                                    UserRepository userRepository,
-                                   ExpertSystemService expertSystemService) {
+                                   ExpertSystemService expertSystemService,
+                                   PatientReportHistory patientReportHistory) {
         this.reportRepository = reportRepository;
         this.reportPatientRepository = reportPatientRepository;
         this.patientRepository = patientRepository;
@@ -51,6 +53,7 @@ public class PatientAnalyticsService {
         this.reportPatientLinkService = reportPatientLinkService;
         this.userRepository = userRepository;
         this.expertSystemService = expertSystemService;
+        this.patientReportHistory = patientReportHistory;
     }
 
     @Transactional(readOnly = true)
@@ -284,34 +287,8 @@ public class PatientAnalyticsService {
     }
 
     private Integer previousRiskScore(Long patientId, AnalysisReport currentReport) {
-        List<AnalysisReport> history = reportRepository.findDistinctByPatientParticipation(patientId);
-        AnalysisReport previous = null;
-        for (int i = 0; i < history.size(); i++) {
-            if (history.get(i).getId().equals(currentReport.getId()) && i + 1 < history.size()) {
-                previous = history.get(i + 1);
-                break;
-            }
-        }
-        if (previous == null) {
-            return null;
-        }
-        Optional<ReportPatient> prevRp = reportPatientRepository
-                .findByReportIdOrderBySortOrderAsc(previous.getId()).stream()
-                .filter(x -> x.getPatientId().equals(patientId))
-                .findFirst();
-        if (prevRp.isEmpty()) {
-            return null;
-        }
-        List<Map<String, Object>> prevRows = previous.getReportData();
-        if (prevRows == null) {
-            return null;
-        }
-        int ord = prevRp.get().getSortOrder();
-        if (ord < 0 || ord >= prevRows.size()) {
-            return null;
-        }
-        Map<String, Object> prevSlice = prevRows.get(ord);
-        return AnalyticsScoring.compute(prevSlice).riskScore();
+        Map<String, Object> prevSlice = patientReportHistory.previousSlice(patientId, currentReport);
+        return prevSlice == null ? null : AnalyticsScoring.compute(prevSlice).riskScore();
     }
 
     private List<AnalyticsViewDto> buildViews(AnalysisReport report, Long onlyPatientId) {

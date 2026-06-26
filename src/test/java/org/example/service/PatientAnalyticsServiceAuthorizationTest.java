@@ -35,10 +35,12 @@ class PatientAnalyticsServiceAuthorizationTest {
     private final ReportPatientLinkService reportPatientLinkService = mock(ReportPatientLinkService.class);
     private final UserRepository userRepository = mock(UserRepository.class);
     private final ExpertSystemService expertSystemService = mock(ExpertSystemService.class);
+    private final PatientReportHistory patientReportHistory = mock(PatientReportHistory.class);
 
     private final PatientAnalyticsService service = new PatientAnalyticsService(
             reportRepository, reportPatientRepository, patientRepository,
-            analyticsRepository, reportPatientLinkService, userRepository, expertSystemService);
+            analyticsRepository, reportPatientLinkService, userRepository, expertSystemService,
+            patientReportHistory);
 
     @AfterEach
     void clearContext() {

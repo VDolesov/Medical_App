@@ -10,6 +10,7 @@ import org.example.repository.ClinicalRuleRepository;
 import org.example.repository.PatientRepository;
 import org.example.repository.ReportPatientRepository;
 import org.example.repository.RuleExecutionRepository;
+import org.example.service.PatientReportHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 @Service
 public class ExpertSystemService {
@@ -37,6 +37,7 @@ public class ExpertSystemService {
     private final AnalysisReportRepository reportRepository;
     private final PatientRepository patientRepository;
     private final FactsBuilder factsBuilder;
+    private final PatientReportHistory patientReportHistory;
     private final ConditionEvaluator conditionEvaluator = new ConditionEvaluator();
 
     public ExpertSystemService(ClinicalRuleRepository ruleRepository,
@@ -44,13 +45,15 @@ public class ExpertSystemService {
                                ReportPatientRepository reportPatientRepository,
                                AnalysisReportRepository reportRepository,
                                PatientRepository patientRepository,
-                               FactsBuilder factsBuilder) {
+                               FactsBuilder factsBuilder,
+                               PatientReportHistory patientReportHistory) {
         this.ruleRepository = ruleRepository;
         this.executionRepository = executionRepository;
         this.reportPatientRepository = reportPatientRepository;
         this.reportRepository = reportRepository;
         this.patientRepository = patientRepository;
         this.factsBuilder = factsBuilder;
+        this.patientReportHistory = patientReportHistory;
     }
 
     @Transactional
@@ -75,7 +78,7 @@ public class ExpertSystemService {
         List<PatientInferenceResult> out = new ArrayList<>(links.size());
         for (ReportPatient rp : links) {
             Map<String, Object> slice = sliceFor(rows, rp.getSortOrder());
-            Map<String, Object> prevSlice = previousSliceForPatient(rp.getPatientId(), report);
+            Map<String, Object> prevSlice = patientReportHistory.previousSlice(rp.getPatientId(), report);
             Patient patient = patientsById.get(rp.getPatientId());
 
             PatientFacts facts = factsBuilder.build(patient, slice, prevSlice);
@@ -94,7 +97,7 @@ public class ExpertSystemService {
 
         List<Map<String, Object>> rows = report.getReportData() == null ? List.of() : report.getReportData();
         Map<String, Object> slice = sliceFor(rows, rp.getSortOrder());
-        Map<String, Object> prevSlice = previousSliceForPatient(rp.getPatientId(), report);
+        Map<String, Object> prevSlice = patientReportHistory.previousSlice(rp.getPatientId(), report);
         Patient patient = patientRepository.findById(rp.getPatientId()).orElse(null);
 
         List<ClinicalRule> rules = ruleRepository.findByActiveTrueOrderByPriorityAsc();
@@ -161,34 +164,6 @@ public class ExpertSystemService {
         }
         Map<String, Object> row = rows.get(sortOrder);
         return row == null ? Map.of() : row;
-    }
-
-    private Map<String, Object> previousSliceForPatient(Long patientId, AnalysisReport currentReport) {
-        if (patientId == null) return null;
-        List<AnalysisReport> history = reportRepository.findDistinctByPatientParticipation(patientId);
-        AnalysisReport previous = null;
-        for (int i = 0; i < history.size(); i++) {
-            if (Objects.equals(history.get(i).getId(), currentReport.getId()) && i + 1 < history.size()) {
-                previous = history.get(i + 1);
-                break;
-            }
-        }
-        if (previous == null || previous.getReportData() == null) {
-            return null;
-        }
-        Optional<ReportPatient> prevRp = reportPatientRepository
-                .findByReportIdOrderBySortOrderAsc(previous.getId()).stream()
-                .filter(x -> patientId.equals(x.getPatientId()))
-                .findFirst();
-        if (prevRp.isEmpty()) {
-            return null;
-        }
-        int ord = prevRp.get().getSortOrder();
-        List<Map<String, Object>> prevRows = previous.getReportData();
-        if (ord < 0 || ord >= prevRows.size()) {
-            return null;
-        }
-        return prevRows.get(ord);
     }
 
     public record TriggeredRuleView(
