@@ -1,7 +1,0 @@
-
-
-PRODUCT_NAME = medical_app
-
-PRODUCT_BUNDLE_IDENTIFIER = com.example.medicalApp
-
-PRODUCT_COPYRIGHT = Copyright © 2025 com.example. All rights reserved.
