@@ -43,3 +43,6 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+
+# --- Generated validation output (регенерируется validate_expert_system.py) ---
+scripts/out/
