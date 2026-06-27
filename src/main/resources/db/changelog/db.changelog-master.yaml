@@ -5,3 +5,4 @@ databaseChangeLog:
   - include: { file: db/changelog/004-expert-system.yaml }
   - include: { file: db/changelog/005-chat.yaml }
   - include: { file: db/changelog/006-seed-clinical-knowledge.yaml }
+  - include: { file: db/changelog/007-rule-exec-unique.yaml }
