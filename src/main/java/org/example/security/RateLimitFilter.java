@@ -69,8 +69,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static String clientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {
-            int comma = forwarded.indexOf(',');
-            return (comma > 0 ? forwarded.substring(0, comma) : forwarded).trim();
+            // Берём последний элемент: его дописывает доверенный прокси,
+            // а начало списка контролирует клиент и может подделать.
+            int comma = forwarded.lastIndexOf(',');
+            return (comma >= 0 ? forwarded.substring(comma + 1) : forwarded).trim();
         }
         return request.getRemoteAddr();
     }
