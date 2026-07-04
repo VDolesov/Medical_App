@@ -133,9 +133,9 @@ class ConditionNodeEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final (bg, accent) = switch (node.kind) {
-      CondKind.allGroup => (scheme.primaryContainer.withOpacity(0.35), scheme.primary),
-      CondKind.anyGroup => (scheme.tertiaryContainer.withOpacity(0.35), scheme.tertiary),
-      CondKind.notGroup => (scheme.errorContainer.withOpacity(0.30), scheme.error),
+      CondKind.allGroup => (scheme.primaryContainer.withValues(alpha: 0.35), scheme.primary),
+      CondKind.anyGroup => (scheme.tertiaryContainer.withValues(alpha: 0.35), scheme.tertiary),
+      CondKind.notGroup => (scheme.errorContainer.withValues(alpha: 0.30), scheme.error),
       CondKind.leaf => (scheme.surfaceContainerHigh, scheme.outlineVariant),
     };
     return Container(
@@ -144,7 +144,7 @@ class ConditionNodeEditor extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accent.withOpacity(0.45), width: 1),
+        border: Border.all(color: accent.withValues(alpha: 0.45), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,22 +1,26 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:medical_app_v2/main.dart';
+import 'package:medical_app_v2/theme/app_theme.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    
-    await tester.pumpWidget(const MyApp());
+  testWidgets('светлая и тёмная темы собираются и применяются', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        home: const Scaffold(body: Center(child: Text('ok'))),
+      ),
+    );
+    expect(find.text('ok'), findsOneWidget);
 
-expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    final BuildContext context = tester.element(find.text('ok'));
+    expect(Theme.of(context).useMaterial3, isTrue);
+  });
 
-await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  test('подписи уровней серьёзности локализованы', () {
+    expect(AppTheme.severityLabel('CRITICAL'), 'Высокий');
+    expect(AppTheme.severityLabel('WARNING'), 'Средний');
+    expect(AppTheme.severityLabel('INFO'), 'Низкий');
   });
 }

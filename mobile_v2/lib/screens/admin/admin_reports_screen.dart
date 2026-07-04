@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../providers/auth_provider.dart';
 import '../../providers/reports_provider.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/loading_indicator.dart';

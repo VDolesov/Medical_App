@@ -74,7 +74,7 @@ class _UploadScreenState extends State<UploadScreen> {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           children: [
             Card(
-              color: scheme.primaryContainer.withOpacity(0.45),
+              color: scheme.primaryContainer.withValues(alpha: 0.45),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -108,7 +108,7 @@ class _UploadScreenState extends State<UploadScreen> {
             if (_result != null) ...[
               const SizedBox(height: 14),
               Card(
-                color: scheme.secondaryContainer.withOpacity(0.5),
+                color: scheme.secondaryContainer.withValues(alpha: 0.5),
                 child: Padding(
                   padding: const EdgeInsets.all(14),
                   child: Row(
@@ -143,7 +143,7 @@ class _UploadScreenState extends State<UploadScreen> {
           color: scheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: scheme.outlineVariant.withOpacity(0.6),
+            color: scheme.outlineVariant.withValues(alpha: 0.6),
             style: BorderStyle.solid,
           ),
         ),

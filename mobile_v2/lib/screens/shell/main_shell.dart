@@ -32,12 +32,34 @@ class _MainShellState extends State<MainShell> {
       });
     }
 
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       body: widget.child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selected,
-        onDestinationSelected: (i) => context.go(tabs[i].route),
-        destinations: tabs.map((t) => _destinationFor(t)).toList(),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+        child: Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: isDark
+                ? scheme.surfaceContainerHigh.withValues(alpha: 0.94)
+                : Colors.white.withValues(alpha: 0.96),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.35)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: NavigationBar(
+            selectedIndex: selected,
+            onDestinationSelected: (i) => context.go(tabs[i].route),
+            destinations: tabs.map((t) => _destinationFor(t)).toList(),
+          ),
+        ),
       ),
     );
   }

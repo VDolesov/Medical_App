@@ -90,7 +90,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Card(
-        color: scheme.primaryContainer.withOpacity(0.55),
+        color: scheme.primaryContainer.withValues(alpha: 0.55),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -261,7 +261,7 @@ class _ExpertFindingsState extends State<_ExpertFindings> {
         final isPatient = auth.isPatient;
         return Container(
           decoration: BoxDecoration(
-            color: scheme.secondaryContainer.withOpacity(0.4),
+            color: scheme.secondaryContainer.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(14),
           ),
           padding: const EdgeInsets.all(12),

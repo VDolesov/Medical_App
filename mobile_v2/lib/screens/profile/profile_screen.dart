@@ -19,7 +19,7 @@ class ProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         children: [
           Card(
-            color: scheme.primaryContainer.withOpacity(0.55),
+            color: scheme.primaryContainer.withValues(alpha: 0.55),
             child: Padding(
               padding: const EdgeInsets.all(18),
               child: Row(

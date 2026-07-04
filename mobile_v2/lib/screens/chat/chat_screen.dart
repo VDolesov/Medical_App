@@ -247,7 +247,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(dayFmt.format(m.createdAt!),
@@ -291,14 +291,14 @@ class _ChatScreenState extends State<ChatScreen> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 2),
                 child: Text(m.senderDisplayName!,
-                    style: TextStyle(color: fg.withOpacity(0.7), fontSize: 11, fontWeight: FontWeight.w600)),
+                    style: TextStyle(color: fg.withValues(alpha: 0.7), fontSize: 11, fontWeight: FontWeight.w600)),
               ),
             if (m.linkedRuleExecutionId != null || m.linkedReportId != null)
               Container(
                 margin: const EdgeInsets.only(bottom: 4),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: fg.withOpacity(mine ? 0.18 : 0.08),
+                  color: fg.withValues(alpha: mine ? 0.18 : 0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -324,7 +324,7 @@ class _ChatScreenState extends State<ChatScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: Text(timeFmt.format(m.createdAt!),
-                    style: TextStyle(color: fg.withOpacity(0.7), fontSize: 10)),
+                    style: TextStyle(color: fg.withValues(alpha: 0.7), fontSize: 10)),
               ),
           ],
         ),
@@ -341,7 +341,7 @@ class _ChatScreenState extends State<ChatScreen> {
       padding: const EdgeInsets.fromLTRB(12, 8, 8, 10),
       decoration: BoxDecoration(
         color: scheme.surface,
-        border: Border(top: BorderSide(color: scheme.outlineVariant.withOpacity(0.5))),
+        border: Border(top: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.5))),
       ),
       child: Row(
         children: [
@@ -353,7 +353,7 @@ class _ChatScreenState extends State<ChatScreen> {
               enabled: !disabled,
               decoration: InputDecoration(
                 hintText: isBlocked
-                    ? (blockedThread!.blockedByCurrentUser
+                    ? (blockedThread.blockedByCurrentUser
                         ? 'Снимите блокировку, чтобы написать'
                         : 'Собеседник заблокировал чат')
                     : isClosed
@@ -378,8 +378,4 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
-}
-
-extension _FirstOrNull<T> on Iterable<T> {
-  T? get firstOrNull => isEmpty ? null : first;
 }
