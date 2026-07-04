@@ -1,0 +1,142 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-analysis-norms
+      author: medical-app
+      changes:
+        - createTable:
+            tableName: analysis_norms
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: name, type: VARCHAR(255), constraints: { nullable: false, unique: true } }
+              - column: { name: min_value, type: DOUBLE PRECISION, constraints: { nullable: false } }
+              - column: { name: max_value, type: DOUBLE PRECISION, constraints: { nullable: false } }
+              - column: { name: unit, type: VARCHAR(32), constraints: { nullable: false } }
+
+  - changeSet:
+      id: 002-patients
+      author: medical-app
+      changes:
+        - createTable:
+            tableName: patients
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: code, type: VARCHAR(64), constraints: { nullable: false, unique: true } }
+              - column: { name: age, type: INTEGER, constraints: { nullable: false } }
+              - column: { name: gender, type: VARCHAR(16) }
+              - column: { name: clinical_notes, type: TEXT }
+              # Лечащий врач. NULL = пациент свободен, виден всем врачам.
+              - column: { name: attending_doctor_user_id, type: BIGINT }
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+                  constraints: { nullable: false }
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+                  constraints: { nullable: false }
+        - addForeignKeyConstraint:
+            baseTableName: patients
+            baseColumnNames: attending_doctor_user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_patients_attending_doctor
+            onDelete: SET NULL
+
+  - changeSet:
+      id: 002-users-patient-fk
+      author: medical-app
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: users
+            baseColumnNames: patient_id
+            referencedTableName: patients
+            referencedColumnNames: id
+            constraintName: fk_users_patient
+            onDelete: SET NULL
+
+  - changeSet:
+      id: 002-analysis-reports
+      author: medical-app
+      changes:
+        - createTable:
+            tableName: analysis_reports
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: user_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: file_name, type: VARCHAR(512), constraints: { nullable: false } }
+              - column: { name: report_data, type: JSONB }
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+                  constraints: { nullable: false }
+        - addForeignKeyConstraint:
+            baseTableName: analysis_reports
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_reports_user
+            onDelete: CASCADE
+
+  - changeSet:
+      id: 002-report-patients
+      author: medical-app
+      changes:
+        - createTable:
+            tableName: report_patients
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: report_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: patient_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: sort_order, type: INTEGER, constraints: { nullable: false } }
+        - addForeignKeyConstraint:
+            baseTableName: report_patients
+            baseColumnNames: report_id
+            referencedTableName: analysis_reports
+            referencedColumnNames: id
+            constraintName: fk_rp_report
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: report_patients
+            baseColumnNames: patient_id
+            referencedTableName: patients
+            referencedColumnNames: id
+            constraintName: fk_rp_patient
+            onDelete: CASCADE
+        - addUniqueConstraint:
+            tableName: report_patients
+            columnNames: report_id, sort_order
+            constraintName: uq_rp_report_sort
+
+  - changeSet:
+      id: 002-patient-ai-analytics
+      author: medical-app
+      changes:
+        - createTable:
+            tableName: patient_ai_analytics
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: report_patient_id, type: BIGINT, constraints: { nullable: false, unique: true } }
+              - column: { name: risk_score, type: INTEGER, constraints: { nullable: false } }
+              - column: { name: risk_level, type: VARCHAR(16), constraints: { nullable: false } }
+              - column: { name: features_json, type: JSONB, constraints: { nullable: false } }
+              - column: { name: explanation_text, type: TEXT, constraints: { nullable: false } }
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+                  constraints: { nullable: false }
+        - addForeignKeyConstraint:
+            baseTableName: patient_ai_analytics
+            baseColumnNames: report_patient_id
+            referencedTableName: report_patients
+            referencedColumnNames: id
+            constraintName: fk_paa_report_patient
+            onDelete: CASCADE
+        - createIndex:
+            indexName: idx_paa_report_patient
+            tableName: patient_ai_analytics
+            columns:
+              - column: { name: report_patient_id }

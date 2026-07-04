@@ -1,0 +1,192 @@
+{
+  "version": "v2-russian-sources-2026-05-11",
+  "comment": "Экспорт правил экспертной системы после ревизии под российские клинические рекомендации. Источник истины в приложении: Liquibase 012-russian-clinical-knowledge.yaml.",
+  "sources": [
+    {
+      "code": "KR-RF-THYROID-CANCER",
+      "title": "Клинические рекомендации РФ: Рак щитовидной железы",
+      "url": "https://www.consultant.ru/document/cons_doc_LAW_496489/"
+    },
+    {
+      "code": "KR-RF-MTC",
+      "title": "Клинические рекомендации РФ: Медуллярный рак щитовидной железы",
+      "url": "https://www.consultant.ru/document/cons_doc_LAW_487866/"
+    },
+    {
+      "code": "KR-RF-HYPOPARATHYROIDISM",
+      "title": "Клинические рекомендации РФ: Гипопаратиреоз у взрослых",
+      "url": "https://legalacts.ru/doc/klinicheskie-rekomendatsii-gipoparatireoz-u-vzroslykh-utv-minzdravom-rossii/"
+    },
+    {
+      "code": "KR-RF-HYPOTHYROIDISM",
+      "title": "Клинические рекомендации РФ: Гипотиреоз",
+      "url": "https://www.consultant.ru/document/cons_doc_LAW_486326/"
+    }
+  ],
+  "rules": [
+    {
+      "code": "R-001",
+      "title": "Признаки стандартного послеоперационного наблюдения при локализованном РЩЖ",
+      "severity": "INFO",
+      "category": "FOLLOW_UP",
+      "condition": {
+        "all": [
+          {"feature": "tnm_t_post", "op": "in", "values": ["T1", "T2"]},
+          {"feature": "tnm_n_post", "op": "in", "values": ["N0", "Nx"]},
+          {"feature": "tnm_m_post", "op": "eq", "value": "M0"}
+        ]
+      }
+    },
+    {
+      "code": "R-002",
+      "title": "Факторы для более частого послеоперационного наблюдения",
+      "severity": "WARNING",
+      "category": "FOLLOW_UP",
+      "condition": {
+        "any": [
+          {"feature": "tnm_t_post", "op": "eq", "value": "T3"},
+          {"all": [
+            {"feature": "antibody_to_tg_post", "op": "gt", "value": 115},
+            {"feature": "antibody_to_tg_delta", "op": "gt", "value": 30}
+          ]},
+          {"feature": "bethesda", "op": "eq", "value": 5}
+        ]
+      }
+    },
+    {
+      "code": "R-003",
+      "title": "Признаки высокого онкологического внимания после операции",
+      "severity": "CRITICAL",
+      "category": "RECURRENCE_SUSPECT",
+      "condition": {
+        "any": [
+          {"feature": "tnm_t_post", "op": "in", "values": ["T4", "T4a", "T4b"]},
+          {"feature": "tnm_m_post", "op": "eq", "value": "M1"},
+          {"all": [
+            {"feature": "cea_post", "op": "gt", "value": 5},
+            {"feature": "calcitonin_post", "op": "gt", "value": 50}
+          ]}
+        ]
+      }
+    },
+    {
+      "code": "R-004",
+      "title": "Биохимические признаки послеоперационного гипопаратиреоза",
+      "severity": "WARNING",
+      "category": "COMPLICATION",
+      "condition": {
+        "all": [
+          {"feature": "calcium_post", "op": "lt", "value": 2.15},
+          {"feature": "parathyroid_post", "op": "lt", "value": 15},
+          {"feature": "operation_type", "op": "present"}
+        ]
+      }
+    },
+    {
+      "code": "R-005",
+      "title": "Значимое повышение кальцитонина: исключить медуллярный РЩЖ",
+      "severity": "WARNING",
+      "category": "DIFFERENTIAL_DIAGNOSIS",
+      "condition": {
+        "any": [
+          {"feature": "calcitonin_pre", "op": "gt", "value": 100},
+          {"feature": "calcitonin_post", "op": "gt", "value": 100}
+        ]
+      }
+    },
+    {
+      "code": "R-006",
+      "title": "Маркерные признаки возможного рецидива или прогрессирования",
+      "severity": "CRITICAL",
+      "category": "RECURRENCE_SUSPECT",
+      "condition": {
+        "any": [
+          {"all": [
+            {"feature": "antibody_to_tg_post", "op": "gt", "value": 115},
+            {"feature": "antibody_to_tg_delta", "op": "gt", "value": 30}
+          ]},
+          {"all": [
+            {"feature": "calcitonin_post", "op": "gt", "value": 10},
+            {"feature": "calcitonin_delta", "op": "gt", "value": 2}
+          ]},
+          {"all": [
+            {"feature": "cea_post", "op": "gt", "value": 5},
+            {"feature": "calcitonin_post", "op": "gt", "value": 10}
+          ]}
+        ]
+      }
+    },
+    {
+      "code": "R-007",
+      "title": "ТТГ выше целевого диапазона после тиреоидэктомии",
+      "severity": "WARNING",
+      "category": "THERAPY_ADJUSTMENT",
+      "condition": {
+        "all": [
+          {"feature": "tsh_post", "op": "gt", "value": 2.0},
+          {"feature": "operation_type", "op": "in", "values": ["тиреоидэктомия", "Тиреоидэктомия", "ТИРЕОИДЭКТОМИЯ"]}
+        ]
+      }
+    },
+    {
+      "code": "R-008",
+      "title": "Чрезмерная супрессия ТТГ при сердечно-сосудистой патологии",
+      "severity": "CRITICAL",
+      "category": "THERAPY_ADJUSTMENT",
+      "condition": {
+        "all": [
+          {"feature": "tsh_post", "op": "lt", "value": 0.1},
+          {"feature": "comorbidity_cv", "op": "eq", "value": 1}
+        ]
+      }
+    },
+    {
+      "code": "R-009",
+      "title": "Затяжная послеоперационная гипокальциемия: контроль гипопаратиреоза",
+      "severity": "WARNING",
+      "category": "COMPLICATION",
+      "condition": {
+        "all": [
+          {"feature": "calcium_post", "op": "lt", "value": 2.15},
+          {"feature": "parathyroid_post", "op": "lt", "value": 15},
+          {"feature": "hospital_stay_days", "op": "gt", "value": 14}
+        ]
+      }
+    },
+    {
+      "code": "R-010",
+      "title": "Лабораторные признаки недостаточной заместительной терапии",
+      "severity": "WARNING",
+      "category": "THERAPY_ADJUSTMENT",
+      "condition": {
+        "all": [
+          {"feature": "tsh_post", "op": "gt", "value": 4.0},
+          {"feature": "t4_free_post", "op": "lt", "value": 9}
+        ]
+      }
+    },
+    {
+      "code": "R-011",
+      "title": "Рост антител к тиреоглобулину в динамике",
+      "severity": "WARNING",
+      "category": "FOLLOW_UP",
+      "condition": {
+        "all": [
+          {"feature": "antibody_to_tg_post", "op": "gt", "value": 115},
+          {"feature": "antibody_to_tg_delta", "op": "gt", "value": 30}
+        ]
+      }
+    },
+    {
+      "code": "R-012",
+      "title": "Bethesda V: цитологическое подозрение на злокачественность",
+      "severity": "INFO",
+      "category": "PREOP_RISK",
+      "condition": {
+        "all": [
+          {"feature": "bethesda", "op": "eq", "value": 5}
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+spring:
+  application:
+    name: medical-app
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
+
+  datasource:
+    hikari:
+      pool-name: medical-pool
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+
+  flyway:
+    enabled: false
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+  cache:
+    type: caffeine
+    cache-names: norms
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=600s
+
+server:
+  port: ${PORT:${SERVER_PORT:8080}}
+  shutdown: graceful
+  forward-headers-strategy: framework
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/plain,text/css,application/javascript
+    min-response-size: 1024
+  tomcat:
+    threads:
+      max: ${TOMCAT_THREADS_MAX:50}
+      min-spare: 5
+    accept-count: 100
+    max-connections: 2000
+    connection-timeout: 20000
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:}
+      expiration-ms: ${JWT_EXPIRATION_MS:28800000}
+
+  admin-secret: ${ADMIN_SECRET:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

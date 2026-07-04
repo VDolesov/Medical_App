@@ -1,0 +1,107 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-clinical-sources
+      author: medical-app
+      changes:
+        - createTable:
+            tableName: clinical_sources
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: code, type: VARCHAR(64), constraints: { nullable: false, unique: true } }
+              - column: { name: title, type: VARCHAR(512), constraints: { nullable: false } }
+              - column: { name: organization, type: VARCHAR(128) }
+              - column: { name: year, type: INTEGER }
+              - column: { name: url, type: VARCHAR(1024) }
+              - column: { name: description, type: TEXT }
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+                  constraints: { nullable: false }
+
+  - changeSet:
+      id: 004-clinical-rules
+      author: medical-app
+      changes:
+        - createTable:
+            tableName: clinical_rules
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: code, type: VARCHAR(32), constraints: { nullable: false, unique: true } }
+              - column: { name: title, type: VARCHAR(512), constraints: { nullable: false } }
+              - column: { name: category, type: VARCHAR(64), constraints: { nullable: false } }
+              - column: { name: severity, type: VARCHAR(16), constraints: { nullable: false } }
+              - column: { name: priority, type: INTEGER, defaultValueNumeric: 100, constraints: { nullable: false } }
+              - column: { name: is_active, type: BOOLEAN, defaultValueBoolean: true, constraints: { nullable: false } }
+              - column: { name: condition_json, type: JSONB, constraints: { nullable: false } }
+              - column: { name: action_json, type: JSONB, constraints: { nullable: false } }
+              - column: { name: rationale, type: TEXT, constraints: { nullable: false } }
+              - column: { name: patient_message, type: TEXT }
+              - column: { name: source_id, type: BIGINT }
+              - column: { name: source_section, type: VARCHAR(128) }
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+                  constraints: { nullable: false }
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+                  constraints: { nullable: false }
+        - addForeignKeyConstraint:
+            baseTableName: clinical_rules
+            baseColumnNames: source_id
+            referencedTableName: clinical_sources
+            referencedColumnNames: id
+            constraintName: fk_clinical_rules_source
+            onDelete: SET NULL
+        - createIndex:
+            indexName: idx_clinical_rules_active_priority
+            tableName: clinical_rules
+            columns:
+              - column: { name: is_active }
+              - column: { name: priority }
+              - column: { name: category }
+
+  - changeSet:
+      id: 004-rule-executions
+      author: medical-app
+      changes:
+        - createTable:
+            tableName: rule_executions
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: report_patient_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: rule_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: rule_code, type: VARCHAR(32), constraints: { nullable: false } }
+              - column: { name: triggered, type: BOOLEAN, constraints: { nullable: false } }
+              - column: { name: severity, type: VARCHAR(16), constraints: { nullable: false } }
+              - column: { name: matched_facts_json, type: JSONB, constraints: { nullable: false } }
+              - column: { name: explanation_text, type: TEXT, constraints: { nullable: false } }
+              - column: { name: patient_explanation_text, type: TEXT }
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+                  constraints: { nullable: false }
+        - addForeignKeyConstraint:
+            baseTableName: rule_executions
+            baseColumnNames: report_patient_id
+            referencedTableName: report_patients
+            referencedColumnNames: id
+            constraintName: fk_rule_exec_report_patient
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: rule_executions
+            baseColumnNames: rule_id
+            referencedTableName: clinical_rules
+            referencedColumnNames: id
+            constraintName: fk_rule_exec_rule
+            onDelete: CASCADE
+        - createIndex:
+            indexName: idx_rule_exec_report_patient
+            tableName: rule_executions
+            columns:
+              - column: { name: report_patient_id }
+              - column: { name: triggered }
