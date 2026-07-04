@@ -19,8 +19,26 @@ public final class SeedDemoAccounts {
     private static final String DEFAULT_USER = "postgres";
     private static final String DEFAULT_PASS = "postgres";
 
-    private static final String PASSWORD = env("SEED_PASSWORD", "123");
+    private static final String PASSWORD = resolveSeedPassword();
     private static final int PATIENT_COUNT = Integer.parseInt(env("SEED_PATIENTS", "30"));
+
+    /**
+     * Пароль демо-аккаунтов. Без явного SEED_PASSWORD генерируем случайный,
+     * чтобы аккаунты с общеизвестным паролем не оказались в доступной снаружи базе.
+     */
+    private static String resolveSeedPassword() {
+        String fromEnv = env("SEED_PASSWORD", "");
+        if (!fromEnv.isBlank()) {
+            return fromEnv;
+        }
+        java.security.SecureRandom rnd = new java.security.SecureRandom();
+        String alphabet = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
+        StringBuilder sb = new StringBuilder(12);
+        for (int i = 0; i < 12; i++) {
+            sb.append(alphabet.charAt(rnd.nextInt(alphabet.length())));
+        }
+        return sb.toString();
+    }
 
     private static final char[] CODE_SYMBOLS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ".toCharArray();
 
