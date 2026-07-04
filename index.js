@@ -31,6 +31,20 @@ app.use(cors(corsOptions));
 const JWT_SECRET = process.env.JWT_SECRET;
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
 
+const crypto = require('crypto');
+
+// Код регистрации персонала (и врач, и админ регистрируются только по нему).
+// Fail closed: если ADMIN_SECRET не задан на сервере — регистрация закрыта полностью.
+// Сравнение через хеши константное по времени и не зависит от длины строк.
+function staffSecretMatches(provided) {
+    if (!ADMIN_SECRET || typeof provided !== 'string' || provided.length === 0) {
+        return false;
+    }
+    const a = crypto.createHash('sha256').update(provided, 'utf8').digest();
+    const b = crypto.createHash('sha256').update(ADMIN_SECRET, 'utf8').digest();
+    return crypto.timingSafeEqual(a, b);
+}
+
 const pool = new Pool({
     user: process.env.PGUSER,
     host: process.env.PGHOST,
@@ -196,13 +210,12 @@ function requireAdmin(req, res, next) {
  *                 description: 'doctor — врач, admin — администратор'
  *               adminSecret:
  *                 type: string
- *                 example: 1111
- *                 description: 'Секретный код для создания admin (требуется только для admin)'
+ *                 description: 'Код регистрации персонала (обязателен и для doctor, и для admin)'
  *     responses:
  *       200:
  *         description: Пользователь зарегистрирован
  *       403:
- *         description: Неверный секретный код для администратора
+ *         description: Неверный код регистрации персонала
  *       400:
  *         description: Ошибка роли
  *       500:
@@ -215,10 +228,17 @@ app.post('/register', async (req, res) => {
     if (!allowedRoles.includes(role)) {
         return res.status(400).json({ error: 'Роль должна быть doctor или admin' });
     }
-    if (role === 'admin') {
-        if (adminSecret !== ADMIN_SECRET) {
-            return res.status(403).json({ error: 'Неверный секретный код для администратора' });
-        }
+    // Врач и администратор — привилегированные роли (видят данные пациентов),
+    // поэтому код регистрации персонала обязателен для обеих.
+    if (!staffSecretMatches(adminSecret)) {
+        return res.status(403).json({ error: 'Неверный код регистрации персонала' });
+    }
+
+    if (typeof username !== 'string' || username.trim().length < 3) {
+        return res.status(400).json({ error: 'Логин должен быть не короче 3 символов' });
+    }
+    if (typeof password !== 'string' || password.length < 8) {
+        return res.status(400).json({ error: 'Минимальная длина пароля — 8 символов' });
     }
 
     // Проверка на кириллицу и Unicode для firstName и lastName
@@ -231,11 +251,16 @@ app.post('/register', async (req, res) => {
     try {
         await pool.query(
             'INSERT INTO users (username, password_hash, email, first_name, last_name, role) VALUES ($1, $2, $3, $4, $5, $6)',
-            [username, hash, email, firstName, lastName, role]
+            [username.trim(), hash, email, firstName, lastName, role]
         );
         res.json({ message: 'Пользователь зарегистрирован' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        // Не отдаём наружу внутренности БД (имена constraint'ов и т.п.)
+        if (err && err.code === '23505') {
+            return res.status(400).json({ error: 'Пользователь с таким username или email уже существует' });
+        }
+        console.error('register failed:', err);
+        res.status(500).json({ error: 'Внутренняя ошибка сервера' });
     }
 });
 
