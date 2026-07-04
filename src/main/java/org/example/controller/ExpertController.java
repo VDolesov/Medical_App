@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.security.CurrentUserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -131,7 +132,7 @@ public class ExpertController {
     })
     public ResponseEntity<?> executionsForReportPatient(
             @Parameter(description = "ID строки отчёта (report_patient.id)") @PathVariable Long reportPatientId) {
-        Long userId = MeController.currentUserId();
+        Long userId = CurrentUserContext.currentUserId();
         ReportPatient rp = reportPatientRepository.findById(reportPatientId).orElse(null);
         if (rp == null) {
             return ResponseEntity.status(404).body(Map.of("error", "Not found"));
@@ -140,7 +141,7 @@ public class ExpertController {
             return ResponseEntity.status(403).body(Map.of("error", "Forbidden"));
         }
 
-        boolean asPatient = MeController.hasRole(Role.PATIENT);
+        boolean asPatient = CurrentUserContext.hasRole(Role.PATIENT);
         Map<Long, ClinicalRule> ruleById = new HashMap<>();
         for (ClinicalRule r : ruleRepository.findAll()) {
             ruleById.put(r.getId(), r);
@@ -207,7 +208,7 @@ public class ExpertController {
         if (rp == null) {
             return ResponseEntity.status(404).body(Map.of("error", "Not found"));
         }
-        if (!canViewReportPatient(rp, MeController.currentUserId())) {
+        if (!canViewReportPatient(rp, CurrentUserContext.currentUserId())) {
             return ResponseEntity.status(403).body(Map.of("error", "Forbidden"));
         }
         ExpertSystemService.PatientInferenceResult result = expertSystemService.runForReportPatient(reportPatientId);
@@ -219,10 +220,10 @@ public class ExpertController {
     }
 
     private boolean canViewReportPatient(ReportPatient rp, Long userId) {
-        if (MeController.isAdmin()) return true;
+        if (CurrentUserContext.isAdmin()) return true;
         AnalysisReport report = reportRepository.findById(rp.getReportId()).orElse(null);
         if (report == null) return false;
-        if (MeController.hasRole(Role.PATIENT)) {
+        if (CurrentUserContext.hasRole(Role.PATIENT)) {
             Optional<User> u = userRepository.findById(userId);
             return u.isPresent() && rp.getPatientId() != null && rp.getPatientId().equals(u.get().getPatientId());
         }

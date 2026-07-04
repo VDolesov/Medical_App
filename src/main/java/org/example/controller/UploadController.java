@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.security.CurrentUserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -69,7 +70,7 @@ public class UploadController {
         if (contentType != null && !contentType.isBlank() && !ALLOWED_CONTENT_TYPES.contains(contentType)) {
             return ResponseEntity.badRequest().body(Map.of("error", "Unsupported file type"));
         }
-        Map<String, Object> result = uploadService.processUpload(MeController.currentUserId(), file.getOriginalFilename(), file);
+        Map<String, Object> result = uploadService.processUpload(CurrentUserContext.currentUserId(), file.getOriginalFilename(), file);
         return ResponseEntity.ok(result);
     }
 

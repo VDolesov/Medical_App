@@ -1,5 +1,6 @@
 package org.example.service;
 
+import org.example.exception.NotFoundException;
 import org.example.model.AnalysisReport;
 import org.example.model.Patient;
 import org.example.model.User;
@@ -35,7 +36,7 @@ public class PatientPortalService {
 
     @Transactional(readOnly = true)
     public List<ReportsService.ReportMetaDto> listReportsForUser(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("Not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException());
         Long patientId = user.getPatientId();
         if (patientId == null) {
             return List.of();
@@ -47,16 +48,16 @@ public class PatientPortalService {
 
     @Transactional(readOnly = true)
     public ReportsService.ReportViewDto getReportForUser(Long reportId, Long userId, int page, int limit) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("Not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException());
         Long patientId = user.getPatientId();
         if (patientId == null) {
-            throw new IllegalArgumentException("Not found");
+            throw new NotFoundException();
         }
         if (!reportPatientRepository.existsByReportIdAndPatientId(reportId, patientId)) {
-            throw new IllegalArgumentException("Not found");
+            throw new NotFoundException();
         }
-        AnalysisReport r = reportRepository.findById(reportId).orElseThrow(() -> new IllegalArgumentException("Not found"));
-        Patient p = patientRepository.findById(patientId).orElseThrow(() -> new IllegalArgumentException("Not found"));
+        AnalysisReport r = reportRepository.findById(reportId).orElseThrow(() -> new NotFoundException());
+        Patient p = patientRepository.findById(patientId).orElseThrow(() -> new NotFoundException());
         String code = p.getCode();
         List<Map<String, Object>> all = r.getReportData();
         if (all == null) {

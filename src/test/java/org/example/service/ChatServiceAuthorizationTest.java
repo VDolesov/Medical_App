@@ -1,5 +1,6 @@
 package org.example.service;
 
+import org.example.exception.ForbiddenException;
 import org.example.model.ChatThread;
 import org.example.model.User;
 import org.example.model.enums.Role;
@@ -49,7 +50,7 @@ class ChatServiceAuthorizationTest {
         when(userRepository.findById(99L)).thenReturn(Optional.of(user(99L, Role.DOCTOR)));
 
         assertThatThrownBy(() -> service.listMessages(10L, 99L))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(ForbiddenException.class);
     }
 
     @Test
@@ -59,7 +60,7 @@ class ChatServiceAuthorizationTest {
         when(userRepository.findById(99L)).thenReturn(Optional.of(user(99L, Role.DOCTOR)));
 
         assertThatThrownBy(() -> service.sendMessage(10L, 99L, "привет", null, null))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(ForbiddenException.class);
     }
 
     @Test

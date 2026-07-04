@@ -20,6 +20,18 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler(org.example.exception.NotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleNotFound(org.example.exception.NotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Не найдено"));
+    }
+
+    @ExceptionHandler(org.example.exception.ForbiddenException.class)
+    public ResponseEntity<Map<String, String>> handleForbidden(org.example.exception.ForbiddenException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Доступ запрещён"));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException e) {
         String msg = e.getMessage();

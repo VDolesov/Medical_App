@@ -1,6 +1,7 @@
 package org.example.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.exception.NotFoundException;
 import org.example.model.AnalysisReport;
 import org.example.repository.AnalysisReportRepository;
 import org.junit.jupiter.api.Test;
@@ -28,14 +29,14 @@ class ReportsServiceAuthorizationTest {
     void doctorCannotViewForeignReport() {
         when(reportRepository.findById(5L)).thenReturn(Optional.of(ownedBy(1L)));
         assertThatThrownBy(() -> service.getReportById(5L, 99L, 1, 50))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(NotFoundException.class);
     }
 
     @Test
     void doctorCannotDeleteForeignReport() {
         when(reportRepository.findById(5L)).thenReturn(Optional.of(ownedBy(1L)));
         assertThatThrownBy(() -> service.deleteReport(5L, 99L))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(NotFoundException.class);
     }
 
     @Test

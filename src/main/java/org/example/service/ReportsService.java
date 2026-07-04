@@ -1,5 +1,6 @@
 package org.example.service;
 
+import org.example.exception.NotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.model.AnalysisReport;
 import org.example.repository.AnalysisReportRepository;
@@ -30,9 +31,9 @@ public class ReportsService {
     }
 
     public ReportViewDto getReportById(Long reportId, Long userId, int page, int limit) {
-        AnalysisReport r = reportRepository.findById(reportId).orElseThrow(() -> new IllegalArgumentException("Not found"));
+        AnalysisReport r = reportRepository.findById(reportId).orElseThrow(() -> new NotFoundException());
         if (!r.getUserId().equals(userId)) {
-            throw new IllegalArgumentException("Not found");
+            throw new NotFoundException();
         }
         ReportViewDto dto = ReportViewDto.from(r, page, limit, objectMapper);
         reportPatientAttachmentService.enrichReportView(dto, reportId, userId, false);
@@ -40,9 +41,9 @@ public class ReportsService {
     }
 
     public void deleteReport(Long reportId, Long userId) {
-        AnalysisReport r = reportRepository.findById(reportId).orElseThrow(() -> new IllegalArgumentException("Not found"));
+        AnalysisReport r = reportRepository.findById(reportId).orElseThrow(() -> new NotFoundException());
         if (!r.getUserId().equals(userId)) {
-            throw new IllegalArgumentException("Not found");
+            throw new NotFoundException();
         }
         List<Long> patientIds = reportPatientAttachmentService.patientIdsOfReport(reportId);
         reportRepository.delete(r);

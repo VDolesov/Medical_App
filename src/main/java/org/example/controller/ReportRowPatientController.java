@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.security.CurrentUserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -44,7 +45,7 @@ public class ReportRowPatientController {
             @Parameter(description = "Индекс строки в отчёте (с 0)") @PathVariable int rowIndex,
             @RequestBody Map<String, String> body) {
         try {
-            attachmentService.attachPatientToRow(reportId, rowIndex, codeOf(body), MeController.currentUserId(), false);
+            attachmentService.attachPatientToRow(reportId, rowIndex, codeOf(body), CurrentUserContext.currentUserId(), false);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (ResponseStatusException e) {
             return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", e.getReason()));
@@ -68,7 +69,7 @@ public class ReportRowPatientController {
             @Parameter(description = "ID отчёта") @PathVariable Long reportId,
             @Parameter(description = "Индекс строки") @PathVariable int rowIndex) {
         try {
-            attachmentService.detachPatientFromRow(reportId, rowIndex, MeController.currentUserId(), false);
+            attachmentService.detachPatientFromRow(reportId, rowIndex, CurrentUserContext.currentUserId(), false);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (ResponseStatusException e) {
             return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", e.getReason()));
@@ -91,7 +92,7 @@ public class ReportRowPatientController {
             @Parameter(description = "Индекс строки") @PathVariable int rowIndex,
             @RequestBody Map<String, String> body) {
         try {
-            attachmentService.attachPatientToRow(reportId, rowIndex, codeOf(body), MeController.currentUserId(), true);
+            attachmentService.attachPatientToRow(reportId, rowIndex, codeOf(body), CurrentUserContext.currentUserId(), true);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (ResponseStatusException e) {
             return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", e.getReason()));
@@ -112,7 +113,7 @@ public class ReportRowPatientController {
             @Parameter(description = "ID отчёта") @PathVariable Long reportId,
             @Parameter(description = "Индекс строки") @PathVariable int rowIndex) {
         try {
-            attachmentService.detachPatientFromRow(reportId, rowIndex, MeController.currentUserId(), true);
+            attachmentService.detachPatientFromRow(reportId, rowIndex, CurrentUserContext.currentUserId(), true);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (ResponseStatusException e) {
             return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", e.getReason()));

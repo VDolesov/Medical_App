@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.security.CurrentUserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -40,7 +41,7 @@ public class ChatController {
     @ApiResponses(@ApiResponse(responseCode = "200", description = "Массив тредов"))
     public ResponseEntity<?> listThreads() {
         try {
-            return ResponseEntity.ok(chatService.listForUser(MeController.currentUserId()));
+            return ResponseEntity.ok(chatService.listForUser(CurrentUserContext.currentUserId()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("error", e.getMessage()));
         }
@@ -64,7 +65,7 @@ public class ChatController {
         }
         String subject = req.get("subject") == null ? null : String.valueOf(req.get("subject"));
         try {
-            return ResponseEntity.ok(chatService.openOrGetThread(MeController.currentUserId(), n.longValue(), subject));
+            return ResponseEntity.ok(chatService.openOrGetThread(CurrentUserContext.currentUserId(), n.longValue(), subject));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -85,7 +86,7 @@ public class ChatController {
             @RequestBody(required = false) Map<String, Object> req) {
         String subject = (req == null || req.get("subject") == null) ? null : String.valueOf(req.get("subject"));
         try {
-            return ResponseEntity.ok(chatService.openByPatientIdAsDoctor(MeController.currentUserId(), patientId, subject));
+            return ResponseEntity.ok(chatService.openByPatientIdAsDoctor(CurrentUserContext.currentUserId(), patientId, subject));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -102,7 +103,7 @@ public class ChatController {
     public ResponseEntity<?> openWithMyDoctor(@RequestBody(required = false) Map<String, Object> req) {
         String subject = (req == null || req.get("subject") == null) ? null : String.valueOf(req.get("subject"));
         try {
-            return ResponseEntity.ok(chatService.openWithMyDoctor(MeController.currentUserId(), subject));
+            return ResponseEntity.ok(chatService.openWithMyDoctor(CurrentUserContext.currentUserId(), subject));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -118,7 +119,7 @@ public class ChatController {
     })
     public ResponseEntity<?> messages(@Parameter(description = "ID треда") @PathVariable Long id) {
         try {
-            return ResponseEntity.ok(chatService.listMessages(id, MeController.currentUserId()));
+            return ResponseEntity.ok(chatService.listMessages(id, CurrentUserContext.currentUserId()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("error", e.getMessage()));
         }
@@ -142,7 +143,7 @@ public class ChatController {
         Long linkedReportId = req.get("linkedReportId") instanceof Number n1 ? n1.longValue() : null;
         Long linkedRuleExecutionId = req.get("linkedRuleExecutionId") instanceof Number n2 ? n2.longValue() : null;
         try {
-            return ResponseEntity.ok(chatService.sendMessage(id, MeController.currentUserId(), body, linkedReportId, linkedRuleExecutionId));
+            return ResponseEntity.ok(chatService.sendMessage(id, CurrentUserContext.currentUserId(), body, linkedReportId, linkedRuleExecutionId));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -154,7 +155,7 @@ public class ChatController {
             description = "Помечает все непрочитанные сообщения треда (от другого участника) как прочитанные текущим пользователем.")
     public ResponseEntity<?> markRead(@Parameter(description = "ID треда") @PathVariable Long id) {
         try {
-            return ResponseEntity.ok(Map.of("marked", chatService.markRead(id, MeController.currentUserId())));
+            return ResponseEntity.ok(Map.of("marked", chatService.markRead(id, CurrentUserContext.currentUserId())));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("error", e.getMessage()));
         }
@@ -168,7 +169,7 @@ public class ChatController {
                     Пока хотя бы одна сторона заблокировала — отправка сообщений в треде невозможна.""")
     public ResponseEntity<?> block(@Parameter(description = "ID треда") @PathVariable Long id) {
         try {
-            return ResponseEntity.ok(chatService.setBlocked(id, MeController.currentUserId(), true));
+            return ResponseEntity.ok(chatService.setBlocked(id, CurrentUserContext.currentUserId(), true));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -180,7 +181,7 @@ public class ChatController {
             description = "Снимает блокировку с моей стороны. Если другая сторона тоже заблокировала — переписка всё равно недоступна, пока она не разблокирует.")
     public ResponseEntity<?> unblock(@Parameter(description = "ID треда") @PathVariable Long id) {
         try {
-            return ResponseEntity.ok(chatService.setBlocked(id, MeController.currentUserId(), false));
+            return ResponseEntity.ok(chatService.setBlocked(id, CurrentUserContext.currentUserId(), false));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -194,7 +195,7 @@ public class ChatController {
                     ADMIN видит список врачей, DOCTOR — список администраторов.
                     Пациенту это не нужно — у него фиксированный собеседник через `/chat/threads/with-my-doctor`.""")
     public ResponseEntity<?> contacts() {
-        User me = userRepository.findById(MeController.currentUserId()).orElse(null);
+        User me = userRepository.findById(CurrentUserContext.currentUserId()).orElse(null);
         if (me == null) {
             return ResponseEntity.status(404).body(Map.of("error", "Не найден"));
         }
@@ -222,7 +223,7 @@ public class ChatController {
             summary = "Число непрочитанных сообщений",
             description = "Возвращает суммарное число непрочитанных сообщений во всех тредах текущего пользователя. Используется для бейджа в нижней навигации мобайла.")
     public ResponseEntity<?> unread() {
-        return ResponseEntity.ok(Map.of("unread", chatService.unreadCount(MeController.currentUserId())));
+        return ResponseEntity.ok(Map.of("unread", chatService.unreadCount(CurrentUserContext.currentUserId())));
     }
 
     private static String displayName(User u) {

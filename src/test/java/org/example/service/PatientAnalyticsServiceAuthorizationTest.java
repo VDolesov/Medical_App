@@ -1,5 +1,6 @@
 package org.example.service;
 
+import org.example.exception.NotFoundException;
 import org.example.model.Patient;
 import org.example.repository.AnalysisReportRepository;
 import org.example.repository.PatientAiAnalyticsRepository;
@@ -66,7 +67,7 @@ class PatientAnalyticsServiceAuthorizationTest {
             when(patientRepository.findById(99L)).thenReturn(Optional.of(foreign));
 
             assertThatThrownBy(() -> service.historyForPatient(99L, 5L))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(NotFoundException.class);
             verify(reportPatientRepository, never()).findByPatientIdOrderByReportCreatedAtDesc(anyLong());
         }
 

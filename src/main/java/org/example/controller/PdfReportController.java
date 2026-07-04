@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.security.CurrentUserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -66,10 +67,10 @@ public class PdfReportController {
         if (rp == null || !reportId.equals(rp.getReportId())) {
             return ResponseEntity.status(404).body(Map.of("error", "Not found"));
         }
-        if (!canAccess(rp, MeController.currentUserId())) {
+        if (!canAccess(rp, CurrentUserContext.currentUserId())) {
             return ResponseEntity.status(403).body(Map.of("error", "Forbidden"));
         }
-        byte[] pdf = pdfReportService.buildPatientReport(rpId, MeController.hasRole(Role.PATIENT));
+        byte[] pdf = pdfReportService.buildPatientReport(rpId, CurrentUserContext.hasRole(Role.PATIENT));
         String fileName = "report-" + reportId + "-patient-" + rpId + ".pdf";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
@@ -78,10 +79,10 @@ public class PdfReportController {
     }
 
     private boolean canAccess(ReportPatient rp, Long userId) {
-        if (MeController.isAdmin()) return true;
+        if (CurrentUserContext.isAdmin()) return true;
         AnalysisReport report = reportRepository.findById(rp.getReportId()).orElse(null);
         if (report == null) return false;
-        if (MeController.hasRole(Role.PATIENT)) {
+        if (CurrentUserContext.hasRole(Role.PATIENT)) {
             User u = userRepository.findById(userId).orElse(null);
             return u != null && rp.getPatientId() != null && rp.getPatientId().equals(u.getPatientId());
         }

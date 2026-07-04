@@ -1,5 +1,7 @@
 package org.example.service;
 
+import org.example.exception.ForbiddenException;
+import org.example.exception.NotFoundException;
 import org.example.model.ChatMessage;
 import org.example.model.ChatThread;
 import org.example.model.Patient;
@@ -15,9 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 @Service
 public class ChatService {
@@ -39,7 +43,7 @@ public class ChatService {
 
     @Transactional(readOnly = true)
     public List<ThreadView> listForUser(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("Not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException());
         List<ChatThread> threads;
         if (user.getRole() == Role.DOCTOR) {
             threads = threadRepository.findByDoctorUserIdOrderByLastMessageAtDescCreatedAtDesc(userId);
@@ -50,11 +54,12 @@ public class ChatService {
         }
 
         Map<Long, User> usersById = loadUsers(threads);
+        Map<Long, Long> unreadByThread = loadUnreadCounts(threads, userId);
         List<ThreadView> out = new ArrayList<>(threads.size());
         for (ChatThread t : threads) {
             long otherId = userId.equals(t.getPatientUserId()) ? t.getDoctorUserId() : t.getPatientUserId();
             User other = usersById.get(otherId);
-            long unread = messageRepository.countByThreadIdAndReadByRecipientFalseAndSenderUserIdNot(t.getId(), userId);
+            long unread = unreadByThread.getOrDefault(t.getId(), 0L);
             out.add(new ThreadView(
                     t.getId(),
                     t.getPatientUserId(),
@@ -78,7 +83,7 @@ public class ChatService {
     @Transactional
     public ThreadView openByPatientIdAsDoctor(Long doctorUserId, Long patientId, String subject) {
         User doctor = userRepository.findById(doctorUserId)
-                .orElseThrow(() -> new IllegalArgumentException("Not found"));
+                .orElseThrow(() -> new NotFoundException());
         if (doctor.getRole() != Role.DOCTOR) {
             throw new IllegalArgumentException("Открыть чат с пациентом может только врач");
         }
@@ -96,7 +101,7 @@ public class ChatService {
     @Transactional
     public ThreadView openWithMyDoctor(Long patientUserId, String subject) {
         User patientUser = userRepository.findById(patientUserId)
-                .orElseThrow(() -> new IllegalArgumentException("Not found"));
+                .orElseThrow(() -> new NotFoundException());
         if (patientUser.getRole() != Role.PATIENT || patientUser.getPatientId() == null) {
             throw new IllegalArgumentException("Доступно только пациенту с привязанной карточкой");
         }
@@ -113,8 +118,8 @@ public class ChatService {
         if (currentUserId == null || otherUserId == null || currentUserId.equals(otherUserId)) {
             throw new IllegalArgumentException("Bad parties");
         }
-        User a = userRepository.findById(currentUserId).orElseThrow(() -> new IllegalArgumentException("Not found"));
-        User b = userRepository.findById(otherUserId).orElseThrow(() -> new IllegalArgumentException("Not found"));
+        User a = userRepository.findById(currentUserId).orElseThrow(() -> new NotFoundException());
+        User b = userRepository.findById(otherUserId).orElseThrow(() -> new NotFoundException());
 
         Role ra = a.getRole();
         Role rb = b.getRole();
@@ -247,7 +252,7 @@ public class ChatService {
     public ThreadView setBlocked(Long threadId, Long currentUserId, boolean blocked) {
         ChatThread thread = requireAccess(threadId, currentUserId);
         User current = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new IllegalArgumentException("Not found"));
+                .orElseThrow(() -> new NotFoundException());
         if (!currentUserId.equals(thread.getPatientUserId()) && !currentUserId.equals(thread.getDoctorUserId())) {
             throw new IllegalArgumentException("Блокировка доступна только участникам чата");
         }
@@ -291,40 +296,45 @@ public class ChatService {
 
     @Transactional(readOnly = true)
     public long unreadCount(Long currentUserId) {
-        User user = userRepository.findById(currentUserId).orElseThrow();
-        List<ChatThread> threads = switch (user.getRole()) {
-            case DOCTOR -> threadRepository.findByDoctorUserIdOrderByLastMessageAtDescCreatedAtDesc(currentUserId);
-            case PATIENT, ADMIN -> threadRepository.findByPatientUserIdOrderByLastMessageAtDescCreatedAtDesc(currentUserId);
-            default -> List.of();
-        };
-        long total = 0;
-        for (ChatThread t : threads) {
-            total += messageRepository.countByThreadIdAndReadByRecipientFalseAndSenderUserIdNot(t.getId(), currentUserId);
-        }
-        return total;
+        return messageRepository.countUnreadForUser(currentUserId);
     }
 
     private ChatThread requireAccess(Long threadId, Long currentUserId) {
         ChatThread t = threadRepository.findById(threadId)
-                .orElseThrow(() -> new IllegalArgumentException("Not found"));
+                .orElseThrow(() -> new NotFoundException());
         User u = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new IllegalArgumentException("Not found"));
+                .orElseThrow(() -> new NotFoundException());
         boolean isAdmin = u.getRole() == Role.ADMIN;
         boolean isParticipant = currentUserId.equals(t.getPatientUserId()) || currentUserId.equals(t.getDoctorUserId());
         if (!isAdmin && !isParticipant) {
-            throw new IllegalArgumentException("Forbidden");
+            throw new ForbiddenException();
         }
         return t;
     }
 
     private Map<Long, User> loadUsers(List<ChatThread> threads) {
-        Map<Long, User> map = new HashMap<>();
+        Set<Long> ids = new HashSet<>();
         for (ChatThread t : threads) {
-            for (long uid : new long[]{t.getPatientUserId(), t.getDoctorUserId()}) {
-                if (!map.containsKey(uid)) {
-                    userRepository.findById(uid).ifPresent(u -> map.put(u.getId(), u));
-                }
+            ids.add(t.getPatientUserId());
+            ids.add(t.getDoctorUserId());
+        }
+        Map<Long, User> map = new HashMap<>();
+        if (!ids.isEmpty()) {
+            for (User u : userRepository.findAllById(ids)) {
+                map.put(u.getId(), u);
             }
+        }
+        return map;
+    }
+
+    private Map<Long, Long> loadUnreadCounts(List<ChatThread> threads, Long viewerUserId) {
+        if (threads.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> ids = threads.stream().map(ChatThread::getId).toList();
+        Map<Long, Long> map = new HashMap<>();
+        for (ChatMessageRepository.UnreadCountView v : messageRepository.countUnreadByThreads(ids, viewerUserId)) {
+            map.put(v.getThreadId(), v.getUnread());
         }
         return map;
     }

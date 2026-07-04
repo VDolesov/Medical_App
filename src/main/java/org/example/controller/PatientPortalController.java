@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.security.CurrentUserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -39,7 +40,7 @@ public class PatientPortalController {
     @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<?> listReports() {
         try {
-            return ResponseEntity.ok(patientPortalService.listReportsForUser(MeController.currentUserId()));
+            return ResponseEntity.ok(patientPortalService.listReportsForUser(CurrentUserContext.currentUserId()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("error", "Not found"));
         }
@@ -62,7 +63,7 @@ public class PatientPortalController {
             @Parameter(description = "Номер страницы, с 1") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "50") int limit) {
         try {
-            return ResponseEntity.ok(patientPortalService.getReportForUser(id, MeController.currentUserId(), page, limit));
+            return ResponseEntity.ok(patientPortalService.getReportForUser(id, CurrentUserContext.currentUserId(), page, limit));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("error", "Not found"));
         }

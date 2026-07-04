@@ -1,6 +1,7 @@
 package org.example.service;
 
-import org.example.controller.MeController;
+import org.example.exception.NotFoundException;
+import org.example.security.CurrentUserContext;
 import org.example.model.AnalysisReport;
 import org.example.model.Patient;
 import org.example.model.PatientAiAnalytics;
@@ -60,7 +61,7 @@ public class PatientAnalyticsService {
     public ReportSummaryDto summaryForReport(Long reportId, Long userId) {
         AnalysisReport report = loadOwnedReport(reportId, userId);
         reportPatientLinkService.ensureLinks(report);
-        if (MeController.hasRole(Role.PATIENT)) {
+        if (CurrentUserContext.hasRole(Role.PATIENT)) {
             return buildPatientSummary(reportId, userId, report);
         }
         return buildFullSummary(reportId);
@@ -111,10 +112,10 @@ public class PatientAnalyticsService {
     }
 
     private ReportSummaryDto buildPatientSummary(Long reportId, Long userId, AnalysisReport report) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("Not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException());
         Long myPatientId = user.getPatientId();
         if (myPatientId == null) {
-            throw new IllegalArgumentException("Not found");
+            throw new NotFoundException();
         }
         List<ReportPatient> links = reportPatientRepository.findByReportIdOrderBySortOrderAsc(reportId);
         Optional<ReportPatient> mine = links.stream()
@@ -165,29 +166,29 @@ public class PatientAnalyticsService {
     public AnalyticsViewDto getForReportPatient(Long reportId, Long reportPatientId, Long userId) {
         AnalysisReport report = loadOwnedReport(reportId, userId);
         ReportPatient rp = reportPatientRepository.findById(reportPatientId)
-                .orElseThrow(() -> new IllegalArgumentException("Not found"));
+                .orElseThrow(() -> new NotFoundException());
         if (!report.getId().equals(rp.getReportId())) {
-            throw new IllegalArgumentException("Not found");
+            throw new NotFoundException();
         }
         Long only = patientFilterPatientId(userId);
         if (only != null && !only.equals(rp.getPatientId())) {
-            throw new IllegalArgumentException("Not found");
+            throw new NotFoundException();
         }
         return buildView(rp);
     }
 
     @Transactional(readOnly = true)
     public List<PatientHistoryEntryDto> historyForPatient(Long patientId, Long userId) {
-        if (MeController.hasRole(Role.PATIENT)) {
-            User u = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("Not found"));
+        if (CurrentUserContext.hasRole(Role.PATIENT)) {
+            User u = userRepository.findById(userId).orElseThrow(() -> new NotFoundException());
             if (u.getPatientId() == null || !u.getPatientId().equals(patientId)) {
-                throw new IllegalArgumentException("Not found");
+                throw new NotFoundException();
             }
-        } else if (!MeController.isAdmin()) {
+        } else if (!CurrentUserContext.isAdmin()) {
             Patient p = patientRepository.findById(patientId)
-                    .orElseThrow(() -> new IllegalArgumentException("Not found"));
+                    .orElseThrow(() -> new NotFoundException());
             if (!Objects.equals(p.getAttendingDoctorUserId(), userId)) {
-                throw new IllegalArgumentException("Not found");
+                throw new NotFoundException();
             }
         }
         List<ReportPatient> rps = reportPatientRepository.findByPatientIdOrderByReportCreatedAtDesc(patientId);
@@ -235,6 +236,7 @@ public class PatientAnalyticsService {
         analyticsRepository.deleteAllForReport(reportId);
 
         List<ReportPatient> links = reportPatientRepository.findByReportIdOrderBySortOrderAsc(reportId);
+        List<PatientAiAnalytics> entities = new ArrayList<>(links.size());
         for (ReportPatient rp : links) {
             Map<String, Object> slice = rp.getSortOrder() >= 0 && rp.getSortOrder() < rows.size()
                     ? rows.get(rp.getSortOrder())
@@ -259,8 +261,9 @@ public class PatientAnalyticsService {
             entity.setRiskLevel(score.riskLevel());
             entity.setFeaturesJson(features);
             entity.setExplanationText(explanation);
-            analyticsRepository.save(entity);
+            entities.add(entity);
         }
+        analyticsRepository.saveAll(entities);
 
         runExpertSystemAndMergeFeatures(reportId);
 
@@ -270,16 +273,28 @@ public class PatientAnalyticsService {
     private void runExpertSystemAndMergeFeatures(Long reportId) {
         try {
             List<ExpertSystemService.PatientInferenceResult> results = expertSystemService.runForReport(reportId);
-            for (ExpertSystemService.PatientInferenceResult r : results) {
-                analyticsRepository.findByReportPatientId(r.reportPatientId()).ifPresent(ent -> {
-                    Map<String, Object> f = ent.getFeaturesJson() == null
-                            ? new LinkedHashMap<>()
-                            : new LinkedHashMap<>(ent.getFeaturesJson());
-                    f.putAll(r.toFeaturesMap());
-                    ent.setFeaturesJson(f);
-                    analyticsRepository.save(ent);
-                });
+            if (results.isEmpty()) {
+                return;
             }
+            List<Long> rpIds = results.stream()
+                    .map(ExpertSystemService.PatientInferenceResult::reportPatientId)
+                    .toList();
+            Map<Long, PatientAiAnalytics> byRpId = analyticsRepository.findByReportPatientIdIn(rpIds).stream()
+                    .collect(Collectors.toMap(PatientAiAnalytics::getReportPatientId, a -> a));
+            List<PatientAiAnalytics> changed = new ArrayList<>();
+            for (ExpertSystemService.PatientInferenceResult r : results) {
+                PatientAiAnalytics ent = byRpId.get(r.reportPatientId());
+                if (ent == null) {
+                    continue;
+                }
+                Map<String, Object> f = ent.getFeaturesJson() == null
+                        ? new LinkedHashMap<>()
+                        : new LinkedHashMap<>(ent.getFeaturesJson());
+                f.putAll(r.toFeaturesMap());
+                ent.setFeaturesJson(f);
+                changed.add(ent);
+            }
+            analyticsRepository.saveAll(changed);
         } catch (Exception ex) {
             org.slf4j.LoggerFactory.getLogger(PatientAnalyticsService.class)
                     .warn("Expert system failed for report {}: {}", reportId, ex.getMessage(), ex);
@@ -355,25 +370,25 @@ public class PatientAnalyticsService {
 
     private AnalysisReport loadOwnedReport(Long reportId, Long userId) {
         AnalysisReport report = reportRepository.findById(reportId)
-                .orElseThrow(() -> new IllegalArgumentException("Not found"));
-        if (MeController.hasRole(Role.PATIENT)) {
-            User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("Not found"));
+                .orElseThrow(() -> new NotFoundException());
+        if (CurrentUserContext.hasRole(Role.PATIENT)) {
+            User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException());
             if (user.getPatientId() == null) {
-                throw new IllegalArgumentException("Not found");
+                throw new NotFoundException();
             }
             if (!reportPatientRepository.existsByReportIdAndPatientId(reportId, user.getPatientId())) {
-                throw new IllegalArgumentException("Not found");
+                throw new NotFoundException();
             }
             return report;
         }
-        if (!MeController.isAdmin() && !report.getUserId().equals(userId)) {
-            throw new IllegalArgumentException("Not found");
+        if (!CurrentUserContext.isAdmin() && !report.getUserId().equals(userId)) {
+            throw new NotFoundException();
         }
         return report;
     }
 
     private Long patientFilterPatientId(Long userId) {
-        if (!MeController.hasRole(Role.PATIENT)) {
+        if (!CurrentUserContext.hasRole(Role.PATIENT)) {
             return null;
         }
         return userRepository.findById(userId).map(User::getPatientId).orElse(null);

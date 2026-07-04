@@ -9,11 +9,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class ReportPatientLinkService {
@@ -35,33 +37,45 @@ public class ReportPatientLinkService {
             return;
         }
         Set<Long> patientIdsUsed = new HashSet<>();
+        Set<Integer> sortOrdersUsed = new HashSet<>();
         for (ReportPatient rp : reportPatientRepository.findByReportIdOrderBySortOrderAsc(reportId)) {
             patientIdsUsed.add(rp.getPatientId());
+            sortOrdersUsed.add(rp.getSortOrder());
         }
+
+        Map<Integer, String> codeByRow = new LinkedHashMap<>();
         for (int i = 0; i < rows.size(); i++) {
-            if (reportPatientRepository.findByReportIdAndSortOrder(reportId, i).isPresent()) {
+            if (sortOrdersUsed.contains(i)) {
                 continue;
             }
-            Map<String, Object> row = rows.get(i);
-            Object codeObj = row.get("code");
+            Object codeObj = rows.get(i).get("code");
             String code = codeObj == null ? "" : codeObj.toString().trim();
-            if (code.isEmpty()) {
-                continue;
+            if (!code.isEmpty()) {
+                codeByRow.put(i, code);
             }
-            Optional<Patient> patientOpt = patientRepository.findByCode(code);
-            if (patientOpt.isEmpty()) {
-                continue;
-            }
-            Patient patient = patientOpt.get();
-            if (patientIdsUsed.contains(patient.getId())) {
+        }
+        if (codeByRow.isEmpty()) {
+            return;
+        }
+
+        Map<String, Patient> patientsByCode = patientRepository.findByCodeIn(new HashSet<>(codeByRow.values())).stream()
+                .collect(Collectors.toMap(Patient::getCode, p -> p, (a, b) -> a));
+
+        List<ReportPatient> newLinks = new ArrayList<>();
+        for (Map.Entry<Integer, String> e : codeByRow.entrySet()) {
+            Patient patient = patientsByCode.get(e.getValue());
+            if (patient == null || patientIdsUsed.contains(patient.getId())) {
                 continue;
             }
             ReportPatient link = new ReportPatient();
             link.setReportId(reportId);
             link.setPatientId(patient.getId());
-            link.setSortOrder(i);
-            reportPatientRepository.save(link);
+            link.setSortOrder(e.getKey());
+            newLinks.add(link);
             patientIdsUsed.add(patient.getId());
+        }
+        if (!newLinks.isEmpty()) {
+            reportPatientRepository.saveAll(newLinks);
         }
     }
 }

@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.security.CurrentUserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -52,7 +53,7 @@ public class DoctorPatientsController {
             @Parameter(description = "Размер страницы, максимум 100") @RequestParam(defaultValue = "20") int size,
             @Parameter(description = "Только пациенты с зарегистрированным ЛК") @RequestParam(defaultValue = "false") boolean registered_only) {
         Page<PatientDirectoryEntryDto> result = patientDirectoryService.list(
-                q, page, size, MeController.currentUserId(), MeController.isAdmin(), registered_only);
+                q, page, size, CurrentUserContext.currentUserId(), CurrentUserContext.isAdmin(), registered_only);
         Map<String, Object> body = new HashMap<>();
         body.put("content", result.getContent().stream().map(this::toMap).collect(Collectors.toList()));
         body.put("totalElements", result.getTotalElements());

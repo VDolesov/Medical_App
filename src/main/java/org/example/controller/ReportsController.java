@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.security.CurrentUserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -37,7 +38,7 @@ public class ReportsController {
     })
     @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<?> getReports() {
-        List<ReportsService.ReportMetaDto> list = reportsService.getReportsByUser(MeController.currentUserId());
+        List<ReportsService.ReportMetaDto> list = reportsService.getReportsByUser(CurrentUserContext.currentUserId());
         return ResponseEntity.ok(list);
     }
 
@@ -58,7 +59,7 @@ public class ReportsController {
             @Parameter(description = "Номер страницы, начиная с 1") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "50") int limit) {
         try {
-            return ResponseEntity.ok(reportsService.getReportById(id, MeController.currentUserId(), page, limit));
+            return ResponseEntity.ok(reportsService.getReportById(id, CurrentUserContext.currentUserId(), page, limit));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("error", "Not found"));
         }
@@ -79,7 +80,7 @@ public class ReportsController {
     @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
     public ResponseEntity<?> deleteReport(@Parameter(description = "ID отчёта") @PathVariable Long id) {
         try {
-            reportsService.deleteReport(id, MeController.currentUserId());
+            reportsService.deleteReport(id, CurrentUserContext.currentUserId());
             return ResponseEntity.ok(Map.of("success", true));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("error", "Not found"));

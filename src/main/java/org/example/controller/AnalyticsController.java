@@ -1,5 +1,7 @@
 package org.example.controller;
 
+import org.example.exception.NotFoundException;
+import org.example.security.CurrentUserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -41,7 +43,7 @@ public class AnalyticsController {
     })
     public ResponseEntity<?> summary(@Parameter(description = "ID отчёта") @PathVariable Long id) {
         try {
-            return ResponseEntity.ok(analyticsService.summaryForReport(id, MeController.currentUserId()));
+            return ResponseEntity.ok(analyticsService.summaryForReport(id, CurrentUserContext.currentUserId()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("error", "Not found"));
         }
@@ -57,7 +59,7 @@ public class AnalyticsController {
     })
     public ResponseEntity<?> listPatients(@Parameter(description = "ID отчёта") @PathVariable Long id) {
         try {
-            return ResponseEntity.ok(analyticsService.listForReport(id, MeController.currentUserId()));
+            return ResponseEntity.ok(analyticsService.listForReport(id, CurrentUserContext.currentUserId()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("error", "Not found"));
         }
@@ -71,7 +73,7 @@ public class AnalyticsController {
             @Parameter(description = "ID отчёта") @PathVariable Long reportId,
             @Parameter(description = "ID строки отчёта (report_patient.id)") @PathVariable Long reportPatientId) {
         try {
-            return ResponseEntity.ok(analyticsService.getForReportPatient(reportId, reportPatientId, MeController.currentUserId()));
+            return ResponseEntity.ok(analyticsService.getForReportPatient(reportId, reportPatientId, CurrentUserContext.currentUserId()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("error", "Not found"));
         }
@@ -96,8 +98,8 @@ public class AnalyticsController {
     public ResponseEntity<?> oneByLink(@Parameter(description = "ID строки отчёта") @PathVariable Long reportPatientId) {
         try {
             ReportPatient rp = reportPatientRepository.findById(reportPatientId)
-                    .orElseThrow(() -> new IllegalArgumentException("Not found"));
-            return ResponseEntity.ok(analyticsService.getForReportPatient(rp.getReportId(), reportPatientId, MeController.currentUserId()));
+                    .orElseThrow(() -> new NotFoundException());
+            return ResponseEntity.ok(analyticsService.getForReportPatient(rp.getReportId(), reportPatientId, CurrentUserContext.currentUserId()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("error", "Not found"));
         }
@@ -109,7 +111,7 @@ public class AnalyticsController {
             description = "Возвращает все срезы аналитики по конкретному пациенту в хронологическом порядке — для построения трендов.")
     public ResponseEntity<?> patientHistory(@Parameter(description = "ID пациента") @PathVariable Long patientId) {
         try {
-            return ResponseEntity.ok(analyticsService.historyForPatient(patientId, MeController.currentUserId()));
+            return ResponseEntity.ok(analyticsService.historyForPatient(patientId, CurrentUserContext.currentUserId()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("error", "Not found"));
         }
@@ -130,7 +132,7 @@ public class AnalyticsController {
     @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
     public ResponseEntity<?> generate(@Parameter(description = "ID отчёта") @PathVariable Long id) {
         try {
-            return ResponseEntity.ok(analyticsService.generateForReport(id, MeController.currentUserId()));
+            return ResponseEntity.ok(analyticsService.generateForReport(id, CurrentUserContext.currentUserId()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("error", "Not found"));
         }

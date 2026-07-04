@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.security.CurrentUserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -58,7 +59,7 @@ public class AdminController {
             @Parameter(description = "Номер страницы, с 1") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "50") int limit) {
         try {
-            return ResponseEntity.ok(adminService.getReportAdmin(id, page, limit, MeController.currentUserId()));
+            return ResponseEntity.ok(adminService.getReportAdmin(id, page, limit, CurrentUserContext.currentUserId()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("error", "Not found"));
         }
@@ -136,7 +137,7 @@ public class AdminController {
     })
     public ResponseEntity<?> deleteUser(@Parameter(description = "ID пользователя") @PathVariable Long id) {
         try {
-            adminService.deleteUser(id, MeController.currentUserId());
+            adminService.deleteUser(id, CurrentUserContext.currentUserId());
             return ResponseEntity.ok(Map.of("message", "Пользователь удалён"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -185,7 +186,7 @@ public class AdminController {
             @Parameter(description = "Номер страницы, с 0") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "50") int size,
             @Parameter(description = "Только пациенты с ЛК") @RequestParam(defaultValue = "false") boolean registered_only) {
-        Long uid = MeController.currentUserId();
+        Long uid = CurrentUserContext.currentUserId();
         Page<PatientDirectoryEntryDto> result = patientDirectoryService.list(q, page, size, uid != null ? uid : 0L, true,
                 registered_only);
         Map<String, Object> out = new HashMap<>();

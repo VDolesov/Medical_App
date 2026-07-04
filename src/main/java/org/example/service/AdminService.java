@@ -1,5 +1,6 @@
 package org.example.service;
 
+import org.example.exception.NotFoundException;
 import org.example.model.AnalysisReport;
 import org.example.model.Patient;
 import org.example.model.User;
@@ -136,7 +137,7 @@ public class AdminService {
     }
 
     public ReportsService.ReportViewDto getReportAdmin(Long reportId, int page, int limit, Long adminUserId) {
-        AnalysisReport r = reportRepository.findById(reportId).orElseThrow(() -> new IllegalArgumentException("Not found"));
+        AnalysisReport r = reportRepository.findById(reportId).orElseThrow(() -> new NotFoundException());
         ReportsService.ReportViewDto dto = ReportsService.ReportViewDto.from(r, page, limit, objectMapper);
         reportPatientAttachmentService.enrichReportView(dto, reportId, adminUserId != null ? adminUserId : 0L, true);
         return dto;
