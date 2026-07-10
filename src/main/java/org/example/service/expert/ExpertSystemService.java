@@ -75,10 +75,12 @@ public class ExpertSystemService {
             }
         }
 
+        Map<Long, Map<String, Object>> prevSlices = patientReportHistory.previousSlices(patientIds, report);
+
         List<PatientInferenceResult> out = new ArrayList<>(links.size());
         for (ReportPatient rp : links) {
             Map<String, Object> slice = sliceFor(rows, rp.getSortOrder());
-            Map<String, Object> prevSlice = patientReportHistory.previousSlice(rp.getPatientId(), report);
+            Map<String, Object> prevSlice = prevSlices.get(rp.getPatientId());
             Patient patient = patientsById.get(rp.getPatientId());
 
             PatientFacts facts = factsBuilder.build(patient, slice, prevSlice);

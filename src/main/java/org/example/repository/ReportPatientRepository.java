@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,6 +18,12 @@ public interface ReportPatientRepository extends JpaRepository<ReportPatient, Lo
 
     @Query("SELECT rp FROM ReportPatient rp JOIN AnalysisReport ar ON rp.reportId = ar.id WHERE rp.patientId = :patientId ORDER BY ar.createdAt DESC")
     List<ReportPatient> findByPatientIdOrderByReportCreatedAtDesc(@Param("patientId") Long patientId);
+
+    @Query("SELECT rp FROM ReportPatient rp JOIN AnalysisReport ar ON rp.reportId = ar.id "
+            + "WHERE rp.patientId IN :patientIds AND ar.createdAt < :before "
+            + "ORDER BY ar.createdAt DESC")
+    List<ReportPatient> findParticipationBefore(@Param("patientIds") Collection<Long> patientIds,
+                                                @Param("before") Instant before);
 
     boolean existsByReportIdAndPatientId(Long reportId, Long patientId);
 

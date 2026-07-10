@@ -236,6 +236,13 @@ public class PatientAnalyticsService {
         analyticsRepository.deleteAllForReport(reportId);
 
         List<ReportPatient> links = reportPatientRepository.findByReportIdOrderBySortOrderAsc(reportId);
+        List<Long> patientIds = links.stream()
+                .map(ReportPatient::getPatientId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, Map<String, Object>> prevSlices = patientReportHistory.previousSlices(patientIds, report);
+
         List<PatientAiAnalytics> entities = new ArrayList<>(links.size());
         for (ReportPatient rp : links) {
             Map<String, Object> slice = rp.getSortOrder() >= 0 && rp.getSortOrder() < rows.size()
@@ -243,7 +250,7 @@ public class PatientAnalyticsService {
                     : Map.of();
 
             AnalyticsScoring.ScoreResult score = AnalyticsScoring.compute(slice);
-            Integer prev = previousRiskScore(rp.getPatientId(), report);
+            Integer prev = riskScoreOf(prevSlices.get(rp.getPatientId()));
             String trend = AnalyticsScoring.compareTrend(score.riskScore(), prev);
 
             Map<String, Object> features = new LinkedHashMap<>();
@@ -301,9 +308,8 @@ public class PatientAnalyticsService {
         }
     }
 
-    private Integer previousRiskScore(Long patientId, AnalysisReport currentReport) {
-        Map<String, Object> prevSlice = patientReportHistory.previousSlice(patientId, currentReport);
-        return prevSlice == null ? null : AnalyticsScoring.compute(prevSlice).riskScore();
+    private static Integer riskScoreOf(Map<String, Object> slice) {
+        return slice == null ? null : AnalyticsScoring.compute(slice).riskScore();
     }
 
     private List<AnalyticsViewDto> buildViews(AnalysisReport report, Long onlyPatientId) {
