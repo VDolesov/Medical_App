@@ -11,55 +11,52 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# Подпись релиза — не коммитить никогда
+key.properties
+**/key.properties
+*.jks
+*.keystore
+
 # Flutter
-medical-backend/medical_app/.dart_tool/
-medical-backend/medical_app/.flutter-plugins
-medical-backend/medical_app/.flutter-plugins-dependencies
-medical-backend/medical_app/.packages
-medical-backend/medical_app/.pub-cache/
-medical-backend/medical_app/.pub/
-medical-backend/medical_app/build/
-medical-backend/medical_app/coverage/
-medical-backend/medical_app/.coverage
-medical-backend/medical_app/.DS_Store
-medical-backend/medical_app/.idea/
-medical-backend/medical_app/*.iml
-medical-backend/medical_app/.vscode/
+medical_app/.dart_tool/
+medical_app/.flutter-plugins
+medical_app/.flutter-plugins-dependencies
+medical_app/.packages
+medical_app/.pub-cache/
+medical_app/.pub/
+medical_app/build/
+medical_app/coverage/
+medical_app/.coverage
+medical_app/.idea/
+medical_app/*.iml
+medical_app/.vscode/
 
 # Android
-medical-backend/medical_app/android/.gradle
-medical-backend/medical_app/android/captures/
-medical-backend/medical_app/android/gradlew
-medical-backend/medical_app/android/gradlew.bat
-medical-backend/medical_app/android/local.properties
-medical-backend/medical_app/android/**/gradle-wrapper.jar
-medical-backend/medical_app/android/.gradle
-medical-backend/medical_app/android/captures/
-medical-backend/medical_app/android/gradlew
-medical-backend/medical_app/android/gradlew.bat
-medical-backend/medical_app/android/local.properties
-medical-backend/medical_app/android/**/gradle-wrapper.jar
-medical-backend/medical_app/android/key.properties
-medical-backend/medical_app/android/app/my-release-key.jks
+medical_app/android/.gradle
+medical_app/android/captures/
+medical_app/android/gradlew
+medical_app/android/gradlew.bat
+medical_app/android/local.properties
+medical_app/android/**/gradle-wrapper.jar
 
 # iOS
-medical-backend/medical_app/ios/Pods/
-medical-backend/medical_app/ios/.symlinks/
-medical-backend/medical_app/ios/Flutter/App.framework
-medical-backend/medical_app/ios/Flutter/Flutter.framework
-medical-backend/medical_app/ios/Flutter/Flutter.podspec
-medical-backend/medical_app/ios/Flutter/Generated.xcconfig
-medical-backend/medical_app/ios/Flutter/ephemeral/
-medical-backend/medical_app/ios/Flutter/app.flx
-medical-backend/medical_app/ios/Flutter/app.zip
-medical-backend/medical_app/ios/Flutter/flutter_assets/
-medical-backend/medical_app/ios/Flutter/flutter_export_environment.sh
-medical-backend/medical_app/ios/ServiceDefinitions.json
-medical-backend/medical_app/ios/Runner/GeneratedPluginRegistrant.*
+medical_app/ios/Pods/
+medical_app/ios/.symlinks/
+medical_app/ios/Flutter/App.framework
+medical_app/ios/Flutter/Flutter.framework
+medical_app/ios/Flutter/Flutter.podspec
+medical_app/ios/Flutter/Generated.xcconfig
+medical_app/ios/Flutter/ephemeral/
+medical_app/ios/Flutter/app.flx
+medical_app/ios/Flutter/app.zip
+medical_app/ios/Flutter/flutter_assets/
+medical_app/ios/Flutter/flutter_export_environment.sh
+medical_app/ios/ServiceDefinitions.json
+medical_app/ios/Runner/GeneratedPluginRegistrant.*
 
 # Uploads
-medical-backend/uploads/
-medical-backend/medical-application.zip
+uploads/
+medical-application.zip
 
 # Logs
 logs
@@ -71,30 +68,15 @@ pids
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
+# Coverage
 coverage/
-
-# nyc test coverage
 .nyc_output
 
-# Dependency directories
-node_modules/
-jspm_packages/
-
-# Optional npm cache directory
+# npm
 .npm
-
-# Optional REPL history
 .node_repl_history
-
-# Output of 'npm pack'
 *.tgz
-
-# Yarn Integrity file
 .yarn-integrity
-
-# dotenv environment variables file
-.env
 
 # IDE
 .vscode/
@@ -112,16 +94,10 @@ jspm_packages/
 ehthumbs.db
 Thumbs.db
 
-# Docker
-.dockerignore
-docker-compose.yml
+# Docker: локальные переопределения не коммитим, сам compose нужен для развёртывания
 docker-compose.override.yml
-**/docker-compose.yml
 **/docker-compose.override.yml
-# Keep example file
-!docker-compose.example.yml
-!**/docker-compose.example.yml
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
