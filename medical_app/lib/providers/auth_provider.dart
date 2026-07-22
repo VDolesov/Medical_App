@@ -30,7 +30,7 @@ class User {
 }
 
 class AuthProvider with ChangeNotifier {
-  static const String _baseUrl = 'https://medscan.ru/api';
+  static const String _baseUrl = 'https://reportmed.ru/api';
   // static const String _baseUrl = 'http://localhost:5000'; // Для локальной разработки
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
