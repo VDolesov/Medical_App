@@ -1,0 +1,10 @@
+.git
+.gitignore
+node_modules
+npm-debug.log
+.env
+medical_app
+DEPLOY.md
+README.md
+docker-compose.yml
+Caddyfile
