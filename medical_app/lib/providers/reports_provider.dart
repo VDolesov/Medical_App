@@ -84,7 +84,7 @@ class PatientReport {
 }
 
 class ReportsProvider with ChangeNotifier {
-  static const String _baseUrl = 'https://medicalprojects-production.up.railway.app';
+  static const String _baseUrl = 'https://tireomed.ru/api';
 
   List<Report> _reports = [];
   List<PatientReport> _currentReport = [];
