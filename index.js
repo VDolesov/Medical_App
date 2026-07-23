@@ -16,13 +16,17 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const app = express();
 app.use(express.json());
 
-// Настройка CORS для production
+// Настройка CORS: адреса фронтенда задаются переменной CORS_ORIGIN
+// (через запятую), локальная разработка разрешена всегда.
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+if (process.env.CORS_ORIGIN) {
+  for (const origin of process.env.CORS_ORIGIN.split(',')) {
+    const trimmed = origin.trim();
+    if (trimmed) allowedOrigins.push(trimmed);
+  }
+}
 const corsOptions = {
-  origin: [
-    'https://medicalreactfrontend-production.up.railway.app',
-    'http://localhost:3000',
-    'http://localhost:3001'
-  ],
+  origin: allowedOrigins,
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -45,13 +49,18 @@ function staffSecretMatches(provided) {
     return crypto.timingSafeEqual(a, b);
 }
 
-const pool = new Pool({
-    user: process.env.PGUSER,
-    host: process.env.PGHOST,
-    database: process.env.PGDATABASE,
-    password: process.env.PGPASSWORD,
-    port: process.env.PGPORT,
-});
+const pool = process.env.DATABASE_URL
+    ? new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+    })
+    : new Pool({
+        user: process.env.PGUSER,
+        host: process.env.PGHOST,
+        database: process.env.PGDATABASE,
+        password: process.env.PGPASSWORD,
+        port: process.env.PGPORT,
+    });
 
 
 const swaggerOptions = {
