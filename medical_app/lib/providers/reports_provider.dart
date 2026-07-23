@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'auth_provider.dart';
+import '../config/api_config.dart';
 import 'package:flutter/widgets.dart';
 
 class Report {
@@ -84,7 +85,7 @@ class PatientReport {
 }
 
 class ReportsProvider with ChangeNotifier {
-  static const String _baseUrl = 'https://reportmed.ru/api';
+  static const String _baseUrl = ApiConfig.baseUrl;
 
   List<Report> _reports = [];
   List<PatientReport> _currentReport = [];

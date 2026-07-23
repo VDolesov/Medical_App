@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'auth_provider.dart';
 import 'package:flutter/material.dart';
+import '../config/api_config.dart';
 
 class Norm {
   final int id;
@@ -48,7 +49,7 @@ class Norm {
 }
 
 class NormsProvider with ChangeNotifier {
-  static const String _baseUrl = 'https://reportmed.ru/api';
+  static const String _baseUrl = ApiConfig.baseUrl;
 
   List<Norm> _norms = [];
   bool _isLoading = false;

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../config/api_config.dart';
 
 class User {
   final int id;
@@ -30,8 +31,7 @@ class User {
 }
 
 class AuthProvider with ChangeNotifier {
-  static const String _baseUrl = 'https://reportmed.ru/api';
-  // static const String _baseUrl = 'http://localhost:5000'; // Для локальной разработки
+  static const String _baseUrl = ApiConfig.baseUrl;
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   
