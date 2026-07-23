@@ -68,8 +68,5 @@ INSERT INTO analysis_norms (id, name, min_value, max_value, unit) VALUES
 (15, 'Антитела к тиреоглобулину после операции', 0.0, 115.0, 'МЕ/мл'),
 (16, 'РЭА после операции', 0.0, 5.0, 'нг/мл');
 
-
-INSERT INTO users (id, username, password_hash, email, first_name, last_name, role) VALUES
-(1, 'kos1', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsInJvbGUiOiJkb2N0b3IiLCJpYXQiOjE3NTAyMDM3NDUsImV4cCI6MTc1MDIzMjU0NX0.LZBsynHElLkpwnXP26rmpsNNoNvOS07AhLcyOZ9QXh0', 'kos1@mail.ru', 'Костя', 'Доля', 'doctor'),
-(2, 'admin', '$2b$10$pl.X60MzDhiACK/k/QWqcetOv0UKn0zY5Dr6CVHQuVwNUVX0BsPXm', 'Val_dolesov@mail.ru', 'Валентин', 'Долесов', 'admin'),
-(3, 'val1', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsInJvbGUiOiJkb2N0b3IiLCJpYXQiOjE3NTAyMDM1MTIsImV4cCI6MTc1MDIzMjMxMn0.SIfTKX26kBCxc-mntMlYhZyeDI81nRAZuvJyPOFo-OM', 'val1@mail.ru', 'Андрей', 'Петров', 'doctor');
+-- Учётные записи не создаются миграцией: первого администратора
+-- регистрируют через приложение по коду персонала (ADMIN_SECRET).
