@@ -1,23 +1,39 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
-const swaggerUi = require('swagger-ui-express');
 
-const { swaggerDocs } = require('./swagger');
+const swagger = require('./config/swagger');
+const authRoutes = require('./routes/auth');
+const normsRoutes = require('./routes/norms');
+const reportsRoutes = require('./routes/reports');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
+
 app.use(express.json());
-app.use(cors());
 
-// Swagger
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+if (process.env.CORS_ORIGIN) {
+    for (const origin of process.env.CORS_ORIGIN.split(',')) {
+        const trimmed = origin.trim();
+        if (trimmed) allowedOrigins.push(trimmed);
+    }
+}
 
-// Роуты
-app.use('/', require('./routes/auth'));
-app.use('/', require('./routes/upload'));
-app.use('/', require('./routes/norms'));
-app.use('/', require('./routes/reports'));
-app.use('/', require('./routes/admin'));
+app.use(cors({
+    origin: allowedOrigins,
+    credentials: true,
+    optionsSuccessStatus: 200,
+}));
+
+app.use('/api-docs', swagger.serve, swagger.setup);
 
 app.get('/ping', (req, res) => res.send('pong'));
+
+app.use(authRoutes);
+app.use(normsRoutes);
+app.use(reportsRoutes);
+app.use(adminRoutes);
 
 module.exports = app;
