@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth');
 const normsRoutes = require('./routes/norms');
 const reportsRoutes = require('./routes/reports');
 const adminRoutes = require('./routes/admin');
+const analyticsRoutes = require('./routes/analytics');
 
 const app = express();
 
@@ -35,5 +36,6 @@ app.use(authRoutes);
 app.use(normsRoutes);
 app.use(reportsRoutes);
 app.use(adminRoutes);
+app.use(analyticsRoutes);
 
 module.exports = app;
