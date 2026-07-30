@@ -216,7 +216,7 @@ class ProfileScreen extends StatelessWidget {
             Text('2. Просмотрите автоматически сгенерированные отчеты'),
             Text('3. Анализируйте отклонения от нормы'),
             SizedBox(height: 16),
-            Text('Поддерживаемые форматы: .xlsx, .xls'),
+            Text('Поддерживаемые форматы: .xlsx, .xlsm, .xls'),
             Text('Максимальный размер файла: 10 MB'),
           ],
         ),

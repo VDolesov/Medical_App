@@ -21,7 +21,7 @@ class _UploadScreenState extends State<UploadScreen> {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['xlsx', 'xls'],
+        allowedExtensions: ['xlsx', 'xlsm', 'xls'],
         allowMultiple: false,
       );
       if (result != null) {
@@ -128,7 +128,7 @@ class _UploadScreenState extends State<UploadScreen> {
                         ),
                         const SizedBox(height: 12),
                         const Text(
-                          'Загрузите Excel файл (.xlsx или .xls) с данными анализов пациентов. '
+                          'Загрузите Excel файл (.xlsx, .xlsm или .xls) с данными анализов пациентов. '
                           'Файл должен содержать следующие колонки:\n'
                           '• Код пациента\n'
                           '• Возраст\n'
@@ -465,7 +465,7 @@ class _UploadScreenState extends State<UploadScreen> {
                           '• Первая строка — заголовки (названия колонок, обязательно!)\n'
                           '• Дальше — данные по каждому пациенту\n'
                           '• Можно добавлять любые анализы в отдельные колонки\n'
-                          '• Поддерживаемые форматы: .xlsx, .xls',
+                          '• Поддерживаемые форматы: .xlsx, .xlsm, .xls',
                           style: TextStyle(fontSize: 13),
                         ),
                       ],
