@@ -123,7 +123,7 @@ class AuthProvider with ChangeNotifier {
         'role': role,
       };
 
-      if (role == 'admin' && adminSecret != null) {
+      if (adminSecret != null) {
         body['adminSecret'] = adminSecret;
       }
 

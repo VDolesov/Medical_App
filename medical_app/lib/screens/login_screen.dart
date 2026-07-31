@@ -53,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
           firstName: _firstNameController.text,
           lastName: _lastNameController.text,
           role: _role,
-          adminSecret: _role == 'admin' ? _adminSecretController.text : null,
+          adminSecret: _adminSecretController.text,
         );
       }
 
@@ -243,23 +243,22 @@ class _LoginScreenState extends State<LoginScreen> {
                               border: OutlineInputBorder(),
                             ),
                           ),
-                          if (_role == 'admin') ...[
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _adminSecretController,
-                              decoration: const InputDecoration(
-                                labelText: 'Admin Secret',
-                                prefixIcon: Icon(Icons.lock_outline),
-                                border: OutlineInputBorder(),
-                              ),
-                              validator: (value) {
-                                if (_role == 'admin' && (value == null || value.isEmpty)) {
-                                  return 'Введите секретный код администратора';
-                                }
-                                return null;
-                              },
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _adminSecretController,
+                            obscureText: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Код регистрации персонала',
+                              prefixIcon: Icon(Icons.lock_outline),
+                              border: OutlineInputBorder(),
                             ),
-                          ],
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Введите код регистрации персонала';
+                              }
+                              return null;
+                            },
+                          ),
                         ],
 
                         // Кнопка входа/регистрации
