@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 
 const swagger = require('./config/swagger');
 const authRoutes = require('./routes/auth');
@@ -12,6 +13,7 @@ const analyticsRoutes = require('./routes/analytics');
 
 const app = express();
 
+app.use(compression());
 app.use(express.json());
 
 const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
