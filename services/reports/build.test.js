@@ -1,11 +1,17 @@
 const test = require('node:test');
 const assert = require('node:assert');
 
-const { buildReport, collectPatients, normalizeAge } = require('./build');
+const { buildReport, collectPatients, normalizeAge, normalizeMarkerName } = require('./build');
 
 const norms = {
-    'ТТГ': { id: 3, min_value: 0.4, max_value: 4.0, unit: 'мЕд/л' },
-    'РЭА': { id: 8, min_value: 0.0, max_value: 5.0, unit: 'нг/мл' },
+    'ТТГ': { id: 3, name: 'ТТГ', min_value: 0.4, max_value: 4.0, unit: 'мЕд/л' },
+    'РЭА': { id: 8, name: 'РЭА', min_value: 0.0, max_value: 5.0, unit: 'нг/мл' },
+};
+
+const opNorms = {
+    ...norms,
+    'Т4 свободный': { id: 4, name: 'Т4 свободный', min_value: 9, max_value: 22, unit: 'пмоль/л' },
+    'ТТГ после операции': { id: 11, name: 'ТТГ после операции', min_value: 0.4, max_value: 4.0, unit: 'мЕд/л' },
 };
 
 test('отклонения выше и ниже нормы попадают в отчёт', () => {
@@ -64,6 +70,40 @@ test('порядок пациентов сохраняется — на нём �
         { 'Код пациента': 'C', 'Возраст': 3, 'ТТГ': 2 },
     ], norms);
     assert.deepStrictEqual(report.map(r => r.code), ['A', 'B', 'C']);
+});
+
+test('единицы измерения в заголовке не мешают распознать показатель', () => {
+    assert.strictEqual(normalizeMarkerName('Кальцитонин (пг/мл)'), 'кальцитонин');
+    assert.strictEqual(normalizeMarkerName('Т4 свободный, пмоль/л'), 'т4 свободный');
+    assert.strictEqual(normalizeMarkerName('  РЭА  (нг/мл) '), 'рэа');
+
+    const { report, results } = buildReport(
+        [{ 'Код пациента': 'X1', 'Возраст': 50, 'РЭА (нг/мл)': 9, 'Т4 свободный, пмоль/л': 30 }],
+        opNorms
+    );
+    assert.strictEqual(results.length, 2);
+    assert.strictEqual(report[0].outOfNorms.length, 2);
+    assert.deepStrictEqual(
+        report[0].outOfNorms.map(o => o.analysis).sort(),
+        ['РЭА', 'Т4 свободный']
+    );
+});
+
+test('«после операции» не схлопывается с обычным показателем', () => {
+    const { results } = buildReport(
+        [{ 'Код пациента': 'X2', 'Возраст': 50, 'ТТГ (мЕд/л)': 9, 'ТТГ после операции': 2 }],
+        opNorms
+    );
+    assert.deepStrictEqual(results.map(r => r.normId).sort((a, b) => a - b), [3, 11]);
+});
+
+test('две колонки на одну норму считаются один раз', () => {
+    const { results } = buildReport(
+        [{ 'Код пациента': 'X3', 'Возраст': 50, 'ТТГ': 9, 'ТТГ (мЕд/л)': 2 }],
+        opNorms
+    );
+    assert.strictEqual(results.length, 1);
+    assert.strictEqual(results[0].value, 9);
 });
 
 test('текстовый возраст превращается в null, а не роняет вставку', () => {
