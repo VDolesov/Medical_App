@@ -5,9 +5,79 @@ const fs = require('fs');
 
 const pool = require('../db');
 const { authenticate } = require('../middleware/auth');
+const { buildReport, collectPatients } = require('../services/reports/build');
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
+
+const CHUNK = 500;
+
+async function upsertPatients(client, patients) {
+    const ids = new Map();
+    if (patients.length === 0) {
+        return ids;
+    }
+
+    const existing = await client.query(
+        'SELECT id, code FROM patients WHERE code = ANY($1::text[])',
+        [patients.map(p => p.code)]
+    );
+    for (const row of existing.rows) {
+        ids.set(row.code, row.id);
+    }
+
+    const missing = patients.filter(p => !ids.has(p.code));
+    for (let i = 0; i < missing.length; i += CHUNK) {
+        const chunk = missing.slice(i, i + CHUNK);
+        const values = [];
+        const params = [];
+        chunk.forEach((patient, idx) => {
+            const base = idx * 2;
+            values.push(`($${base + 1}, $${base + 2})`);
+            params.push(patient.code, patient.age);
+        });
+        const inserted = await client.query(
+            `INSERT INTO patients (code, age) VALUES ${values.join(', ')} ON CONFLICT (code) DO NOTHING RETURNING id, code`,
+            params
+        );
+        for (const row of inserted.rows) {
+            ids.set(row.code, row.id);
+        }
+    }
+
+    const stillMissing = missing.filter(p => !ids.has(p.code)).map(p => p.code);
+    if (stillMissing.length > 0) {
+        const refetched = await client.query(
+            'SELECT id, code FROM patients WHERE code = ANY($1::text[])',
+            [stillMissing]
+        );
+        for (const row of refetched.rows) {
+            ids.set(row.code, row.id);
+        }
+    }
+    return ids;
+}
+
+async function insertResults(client, results, patientIds) {
+    const rows = results
+        .map(r => ({ patientId: patientIds.get(r.code), normId: r.normId, value: r.value }))
+        .filter(r => r.patientId !== undefined);
+
+    for (let i = 0; i < rows.length; i += CHUNK) {
+        const chunk = rows.slice(i, i + CHUNK);
+        const values = [];
+        const params = [];
+        chunk.forEach((row, idx) => {
+            const base = idx * 3;
+            values.push(`($${base + 1}, $${base + 2}, $${base + 3}, NOW())`);
+            params.push(row.patientId, row.normId, row.value);
+        });
+        await client.query(
+            `INSERT INTO analysis_results (patient_id, norm_id, value, date) VALUES ${values.join(', ')}`,
+            params
+        );
+    }
+}
 
 /**
  * @swagger
@@ -39,78 +109,44 @@ router.post('/upload', authenticate, upload.single('file'), async (req, res) => 
     if (!['doctor', 'admin'].includes(req.user.role)) {
         return res.status(403).json({ error: 'Нет прав на загрузку' });
     }
+    if (!req.file) {
+        return res.status(400).json({ error: 'Файл не передан' });
+    }
+
+    const client = await pool.connect();
     try {
         const wb = xlsx.readFile(req.file.path);
         const ws = wb.Sheets[wb.SheetNames[0]];
         const rows = xlsx.utils.sheet_to_json(ws);
-        const report = [];
 
-        const normsRes = await pool.query('SELECT * FROM analysis_norms');
+        const normsRes = await client.query('SELECT * FROM analysis_norms');
         const norms = {};
         normsRes.rows.forEach(n => {
             norms[n.name] = n;
         });
 
-        for (const row of rows) {
-            const code = row['Код пациента'];
-            const age = row['Возраст'];
+        const { report, results } = buildReport(rows, norms);
+        const patients = collectPatients(rows);
 
-            if (!code || code.toString().trim() === '' || !age) continue;
+        await client.query('BEGIN');
 
-            const patientRes = await pool.query('SELECT * FROM patients WHERE code=$1', [code]);
-            let patient;
-            if (patientRes.rows.length === 0) {
-                const inserted = await pool.query(
-                    'INSERT INTO patients (code, age) VALUES ($1, $2) RETURNING *',
-                    [code, age]
-                );
-                patient = inserted.rows[0];
-            } else {
-                patient = patientRes.rows[0];
-            }
+        const patientIds = await upsertPatients(client, patients);
+        await insertResults(client, results, patientIds);
 
-            const patientReport = { code, age, outOfNorms: [] };
-
-            for (const col of Object.keys(row)) {
-                if (col === 'Код пациента' || col === 'Возраст') continue;
-                const norm = norms[col];
-                if (!norm) continue;
-
-                const value = parseFloat(row[col]);
-                if (isNaN(value)) continue;
-
-                await pool.query(
-                    'INSERT INTO analysis_results (patient_id, norm_id, value, date) VALUES ($1, $2, $3, NOW())',
-                    [patient.id, norm.id, value]
-                );
-                if (value < norm.min_value || value > norm.max_value) {
-                    patientReport.outOfNorms.push({
-                        analysis: col,
-                        value,
-                        min: norm.min_value,
-                        max: norm.max_value,
-                        unit: norm.unit,
-                        status: value < norm.min_value ? 'ниже нормы' : 'выше нормы',
-                    });
-                }
-            }
-
-            if (patientReport.outOfNorms.length === 0) {
-                patientReport.outOfNorms = ['Все значения в норме'];
-            }
-            report.push(patientReport);
-        }
-
-        const reportInsert = await pool.query(
+        const reportInsert = await client.query(
             'INSERT INTO analysis_reports (user_id, file_name, report_data) VALUES ($1, $2, $3) RETURNING id',
             [req.user.userId, req.file.originalname, JSON.stringify(report)]
         );
 
-        fs.unlinkSync(req.file.path);
+        await client.query('COMMIT');
         res.json({ reportId: reportInsert.rows[0].id, report });
     } catch (e) {
+        await client.query('ROLLBACK').catch(() => {});
         console.error('upload failed:', e);
         res.status(500).json({ error: 'Не удалось обработать файл' });
+    } finally {
+        client.release();
+        fs.unlink(req.file.path, () => {});
     }
 });
 
