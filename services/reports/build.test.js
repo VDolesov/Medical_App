@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 
-const { buildReport, collectPatients } = require('./build');
+const { buildReport, collectPatients, normalizeAge } = require('./build');
 
 const norms = {
     'ТТГ': { id: 3, min_value: 0.4, max_value: 4.0, unit: 'мЕд/л' },
@@ -64,6 +64,38 @@ test('порядок пациентов сохраняется — на нём �
         { 'Код пациента': 'C', 'Возраст': 3, 'ТТГ': 2 },
     ], norms);
     assert.deepStrictEqual(report.map(r => r.code), ['A', 'B', 'C']);
+});
+
+test('текстовый возраст превращается в null, а не роняет вставку', () => {
+    assert.strictEqual(normalizeAge('тридцать'), null);
+    assert.strictEqual(normalizeAge('н/д'), null);
+    assert.strictEqual(normalizeAge(40), 40);
+    assert.strictEqual(normalizeAge('40'), 40);
+    assert.strictEqual(normalizeAge(40.7), 40);
+
+    const patients = collectPatients([{ 'Код пациента': 'C001', 'Возраст': 'тридцать', 'ТТГ': 2 }]);
+    assert.deepStrictEqual(patients, [{ code: 'C001', age: null }]);
+});
+
+test('пациент с текстовым возрастом всё равно попадает в отчёт', () => {
+    const { report } = buildReport([{ 'Код пациента': 'C001', 'Возраст': 'тридцать', 'ТТГ': 9 }], norms);
+    assert.strictEqual(report.length, 1);
+    assert.strictEqual(report[0].age, 'тридцать');
+    assert.strictEqual(report[0].outOfNorms[0].status, 'выше нормы');
+});
+
+test('файл без колонок кода и возраста даёт пустой отчёт', () => {
+    const { report } = buildReport([{ 'ТТГ': 6.1, 'РЭА': 7 }], norms);
+    assert.strictEqual(report.length, 0);
+});
+
+test('дубль строки не плодит пациентов, но остаётся в отчёте', () => {
+    const rows = [
+        { 'Код пациента': 'D001', 'Возраст': 38, 'ТТГ': 2 },
+        { 'Код пациента': 'D001', 'Возраст': 38, 'ТТГ': 2 },
+    ];
+    assert.strictEqual(buildReport(rows, norms).report.length, 2);
+    assert.strictEqual(collectPatients(rows).length, 1);
 });
 
 test('список пациентов схлопывает повторяющиеся коды', () => {

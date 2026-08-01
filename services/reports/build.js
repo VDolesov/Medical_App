@@ -50,6 +50,11 @@ function buildReport(rows, norms) {
     return { report, results };
 }
 
+function normalizeAge(age) {
+    const parsed = parseInt(age, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
 function collectPatients(rows) {
     const patients = new Map();
     for (const row of rows) {
@@ -60,10 +65,10 @@ function collectPatients(rows) {
         }
         const key = String(code).trim();
         if (!patients.has(key)) {
-            patients.set(key, { code: key, age });
+            patients.set(key, { code: key, age: normalizeAge(age) });
         }
     }
     return [...patients.values()];
 }
 
-module.exports = { buildReport, collectPatients, CODE_COLUMN, AGE_COLUMN };
+module.exports = { buildReport, collectPatients, normalizeAge, CODE_COLUMN, AGE_COLUMN };

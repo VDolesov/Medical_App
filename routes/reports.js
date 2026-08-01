@@ -5,7 +5,7 @@ const fs = require('fs');
 
 const pool = require('../db');
 const { authenticate } = require('../middleware/auth');
-const { buildReport, collectPatients } = require('../services/reports/build');
+const { buildReport, collectPatients, CODE_COLUMN, AGE_COLUMN } = require('../services/reports/build');
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
@@ -127,6 +127,12 @@ router.post('/upload', authenticate, upload.single('file'), async (req, res) => 
 
         const { report, results } = buildReport(rows, norms);
         const patients = collectPatients(rows);
+
+        if (report.length === 0) {
+            return res.status(400).json({
+                error: `В файле не нашлось ни одной пригодной строки. Нужны колонки «${CODE_COLUMN}» и «${AGE_COLUMN}», а также хотя бы один показатель из справочника норм.`,
+            });
+        }
 
         await client.query('BEGIN');
 
