@@ -33,7 +33,7 @@ function buildReport(rows, norms) {
             continue;
         }
 
-        const patientReport = { code, age, outOfNorms: [] };
+        const patientReport = { code, age, measured: 0, outOfNorms: [] };
         const seen = new Set();
 
         for (const col of Object.keys(row)) {
@@ -50,6 +50,7 @@ function buildReport(rows, norms) {
             }
 
             seen.add(norm.id);
+            patientReport.measured++;
             results.push({ code: String(code).trim(), normId: norm.id, value });
 
             if (value < norm.min_value || value > norm.max_value) {

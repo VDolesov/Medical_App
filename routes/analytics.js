@@ -38,7 +38,7 @@ async function loadReport(id, user) {
     return result.rows[0] || null;
 }
 
-async function previousScores(report) {
+async function previousScores(report, normsCount) {
     const result = await pool.query(
         `SELECT report_data FROM analysis_reports
          WHERE user_id=$1 AND id <> $2 AND created_at < $3
@@ -53,16 +53,16 @@ async function previousScores(report) {
             if (code === null || scores.has(code)) {
                 continue;
             }
-            scores.set(code, scoring.compute(slice).riskScore);
+            scores.set(code, scoring.compute(slice, normsCount).riskScore);
         }
     }
     return scores;
 }
 
-function buildViews(report, previous) {
+function buildViews(report, previous, normsCount) {
     return rowsOf(report.report_data).map((slice, index) => {
         const code = codeOf(slice);
-        const score = scoring.compute(slice);
+        const score = scoring.compute(slice, normsCount);
         const prev = code !== null && previous.has(code) ? previous.get(code) : null;
         const trend = scoring.compareTrend(score.riskScore, prev);
         return {
@@ -74,6 +74,8 @@ function buildViews(report, previous) {
             riskLevel: score.riskLevel,
             features: {
                 deviationCount: score.deviationCount,
+                measuredCount: score.measuredCount,
+                maxStrength: Math.round(score.maxStrength * 100) / 100,
                 markerStrengths: score.markerStrengths,
                 topFactors: score.topFactors,
                 trend,
@@ -117,8 +119,10 @@ async function viewsForReport(req, res) {
         res.status(404).json({ error: 'Not found' });
         return null;
     }
-    const previous = await previousScores(report);
-    return buildViews(report, previous);
+    const norms = await pool.query('SELECT COUNT(*)::int AS count FROM analysis_norms');
+    const normsCount = norms.rows[0].count;
+    const previous = await previousScores(report, normsCount);
+    return buildViews(report, previous, normsCount);
 }
 
 /**

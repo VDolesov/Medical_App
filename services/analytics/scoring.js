@@ -34,25 +34,40 @@ function deviationStrength(item) {
     return 0.0;
 }
 
-function compute(rowSlice) {
+function resolveMeasured(rowSlice, fallback, deviationCount) {
+    const stored = rowSlice ? Number(rowSlice.measured) : NaN;
+    if (Number.isFinite(stored) && stored > 0) {
+        return Math.max(stored, deviationCount);
+    }
+    if (Number.isFinite(fallback) && fallback > 0) {
+        return Math.max(fallback, deviationCount);
+    }
+    return deviationCount;
+}
+
+function compute(rowSlice, measuredCount) {
     const deviations = extractDeviations(rowSlice);
     if (deviations.length === 0) {
-        return { riskScore: 0, riskLevel: 'LOW', deviationCount: 0, markerStrengths: {}, topFactors: [] };
+        return { riskScore: 0, riskLevel: 'LOW', deviationCount: 0, markerStrengths: {}, topFactors: [], maxStrength: 0 };
     }
 
     const strengths = new Map();
-    let sumCapped = 0;
+    let burden = 0;
+    let maxStrength = 0;
     for (const item of deviations) {
         const name = item.analysis === undefined || item.analysis === null ? '?' : String(item.analysis);
         const strength = deviationStrength(item);
         const known = strengths.get(name);
         strengths.set(name, known === undefined ? strength : Math.max(known, strength));
-        sumCapped += Math.min(1.0, strength);
+        burden += strength / (1 + strength);
+        if (strength > maxStrength) {
+            maxStrength = strength;
+        }
     }
 
     const n = deviations.length;
-    const avgCapped = sumCapped / n;
-    const raw = Math.round(18.0 * n + 52.0 * avgCapped);
+    const measured = resolveMeasured(rowSlice, measuredCount, n);
+    const raw = Math.round(100 * burden / measured);
     const riskScore = Math.min(100, Math.max(0, raw));
     const riskLevel = riskScore <= 35 ? 'LOW' : (riskScore <= 70 ? 'MEDIUM' : 'HIGH');
 
@@ -65,6 +80,8 @@ function compute(rowSlice) {
         riskScore,
         riskLevel,
         deviationCount: n,
+        measuredCount: measured,
+        maxStrength,
         markerStrengths: Object.fromEntries(strengths),
         topFactors,
     };
@@ -104,8 +121,9 @@ function buildExplanation(score, trend, previousRiskScore) {
     if (score.deviationCount === 0) {
         text += 'Все учтённые показатели в пределах нормы для данного отчёта.';
     } else {
-        text += `Обнаружено отклонений: ${score.deviationCount}. `;
-        text += `Индекс лабораторных отклонений: ${score.riskScore}/100 (${levelRu(score.riskLevel)}).\n`;
+        text += `Обнаружено отклонений: ${score.deviationCount} из ${score.measuredCount} измеренных показателей. `;
+        text += `Индекс лабораторных отклонений: ${score.riskScore}/100 (${levelRu(score.riskLevel)}). `;
+        text += 'Индекс усредняет выраженность отклонений по всей измеренной панели и не является прогнозом заболевания.\n';
         if (score.topFactors.length > 0) {
             const factors = score.topFactors.slice(0, 3);
             text += `Наиболее значимые факторы: ${factors.join(', ')}.`;

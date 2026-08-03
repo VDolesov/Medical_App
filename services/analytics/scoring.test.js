@@ -11,32 +11,63 @@ test('все значения в норме — нулевой балл', () => 
     assert.deepStrictEqual(result.topFactors, []);
 });
 
-test('одно отклонение считается по формуле 18*n + 52*avg', () => {
-    const result = scoring.compute({
-        outOfNorms: [{ analysis: 'Глюкоза', value: 8.0, min: 3.9, max: 6.1 }],
-    });
-    assert.strictEqual(result.riskScore, 63);
-    assert.strictEqual(result.riskLevel, 'MEDIUM');
+test('индекс усредняет выраженность по всей измеренной панели', () => {
+    const slice = { measured: 16, outOfNorms: [{ analysis: 'Глюкоза', value: 8.0, min: 3.9, max: 6.1 }] };
+    const result = scoring.compute(slice);
+    assert.strictEqual(result.riskScore, 3);
+    assert.strictEqual(result.riskLevel, 'LOW');
     assert.strictEqual(result.deviationCount, 1);
+    assert.strictEqual(result.measuredCount, 16);
     assert.deepStrictEqual(result.topFactors, ['Глюкоза']);
 });
 
-test('балл ограничен сотней', () => {
+test('то же отклонение в короткой панели весит больше', () => {
+    const dev = { analysis: 'Глюкоза', value: 8.0, min: 3.9, max: 6.1 };
+    const wide = scoring.compute({ measured: 16, outOfNorms: [dev] }).riskScore;
+    const narrow = scoring.compute({ measured: 2, outOfNorms: [dev] }).riskScore;
+    assert.ok(narrow > wide, `${narrow} должно быть больше ${wide}`);
+    assert.strictEqual(narrow, 23);
+});
+
+test('размер панели не создаёт искусственного потолка', () => {
     const outOfNorms = [];
-    for (let i = 0; i < 5; i++) {
-        outOfNorms.push({ analysis: `Показатель ${i}`, value: 30, min: 1, max: 2 });
+    for (let i = 0; i < 6; i++) {
+        outOfNorms.push({ analysis: `Показатель ${i}`, value: 3, min: 1, max: 2 });
     }
-    const result = scoring.compute({ outOfNorms });
+    const result = scoring.compute({ measured: 16, outOfNorms });
+    assert.ok(result.riskScore < 100, 'шесть отклонений из шестнадцати не должны давать 100');
+    assert.strictEqual(result.riskScore, 19);
+});
+
+test('вся панель запредельна — индекс близок к сотне', () => {
+    const outOfNorms = [];
+    for (let i = 0; i < 16; i++) {
+        outOfNorms.push({ analysis: `Показатель ${i}`, value: 1000, min: 1, max: 2 });
+    }
+    const result = scoring.compute({ measured: 16, outOfNorms });
     assert.strictEqual(result.riskScore, 100);
     assert.strictEqual(result.riskLevel, 'HIGH');
-    assert.strictEqual(result.topFactors.length, 5);
+});
+
+test('число измеренных показателей берётся из отчёта, иначе из справочника', () => {
+    const dev = [{ analysis: 'ТТГ', value: 9, min: 0.4, max: 4 }];
+    assert.strictEqual(scoring.compute({ measured: 8, outOfNorms: dev }, 16).measuredCount, 8);
+    assert.strictEqual(scoring.compute({ outOfNorms: dev }, 16).measuredCount, 16);
+    assert.strictEqual(scoring.compute({ outOfNorms: dev }).measuredCount, 1);
+});
+
+test('измеренных не может быть меньше числа отклонений', () => {
+    const outOfNorms = [
+        { analysis: 'A', value: 9, min: 0, max: 1 },
+        { analysis: 'B', value: 9, min: 0, max: 1 },
+        { analysis: 'C', value: 9, min: 0, max: 1 },
+    ];
+    assert.strictEqual(scoring.compute({ measured: 1, outOfNorms }).measuredCount, 3);
 });
 
 test('нечисловые границы дают силу отклонения 0.5', () => {
-    const result = scoring.compute({
-        outOfNorms: [{ analysis: 'ТТГ', value: 'нет данных', min: null, max: null }],
-    });
-    assert.strictEqual(result.riskScore, 44);
+    const result = scoring.compute({ measured: 1, outOfNorms: [{ analysis: 'ТТГ', value: 'нет данных', min: null, max: null }] });
+    assert.strictEqual(result.riskScore, 33);
     assert.strictEqual(scoring.deviationStrength({ value: 'x', min: 1, max: 2 }), 0.5);
 });
 
