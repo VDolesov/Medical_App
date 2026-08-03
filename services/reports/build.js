@@ -1,3 +1,5 @@
+const { parseUnit, convert } = require('./units');
+
 const CODE_COLUMN = 'Код пациента';
 const AGE_COLUMN = 'Возраст';
 
@@ -44,10 +46,16 @@ function buildReport(rows, norms) {
             if (!norm || seen.has(norm.id)) {
                 continue;
             }
-            const value = parseFloat(row[col]);
-            if (Number.isNaN(value)) {
+            const raw = parseFloat(row[col]);
+            if (Number.isNaN(raw)) {
                 continue;
             }
+
+            const converted = convert(raw, parseUnit(col), norm.unit, norm.name || col);
+            if (!converted.ok) {
+                continue;
+            }
+            const value = Math.round(converted.value * 1e6) / 1e6;
 
             seen.add(norm.id);
             patientReport.measured++;

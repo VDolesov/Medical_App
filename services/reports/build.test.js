@@ -106,6 +106,31 @@ test('две колонки на одну норму считаются один
     assert.strictEqual(results[0].value, 9);
 });
 
+test('значение пересчитывается из единицы заголовка в единицу справочника', () => {
+    const pth = { 'Паратгормон': { id: 6, name: 'Паратгормон', min_value: 15, max_value: 65, unit: 'пг/мл' } };
+
+    const inRange = buildReport([{ 'Код пациента': 'U1', 'Возраст': 40, 'Паратгормон (пмоль/л)': 4 }], pth);
+    assert.deepStrictEqual(inRange.report[0].outOfNorms, ['Все значения в норме']);
+    assert.ok(Math.abs(inRange.results[0].value - 37.7) < 0.1);
+
+    const above = buildReport([{ 'Код пациента': 'U2', 'Возраст': 40, 'Паратгормон (пмоль/л)': 9 }], pth);
+    assert.strictEqual(above.report[0].outOfNorms[0].status, 'выше нормы');
+});
+
+test('колонка без единицы сравнивается со справочником напрямую', () => {
+    const pth = { 'Паратгормон': { id: 6, name: 'Паратгормон', min_value: 15, max_value: 65, unit: 'пг/мл' } };
+    const { report } = buildReport([{ 'Код пациента': 'U3', 'Возраст': 40, 'Паратгормон': 35 }], pth);
+    assert.deepStrictEqual(report[0].outOfNorms, ['Все значения в норме']);
+});
+
+test('непересчитываемая единица пропускается, а не сравнивается как есть', () => {
+    const tsh = { 'ТТГ': { id: 3, name: 'ТТГ', min_value: 0.4, max_value: 4, unit: 'мЕд/л' } };
+    const { report, results } = buildReport([{ 'Код пациента': 'U4', 'Возраст': 40, 'ТТГ (пмоль/л)': 900 }], tsh);
+    assert.strictEqual(results.length, 0);
+    assert.strictEqual(report[0].measured, 0);
+    assert.deepStrictEqual(report[0].outOfNorms, ['Все значения в норме']);
+});
+
 test('текстовый возраст превращается в null, а не роняет вставку', () => {
     assert.strictEqual(normalizeAge('тридцать'), null);
     assert.strictEqual(normalizeAge('н/д'), null);
