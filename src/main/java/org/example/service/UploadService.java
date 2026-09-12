@@ -61,7 +61,13 @@ public class UploadService {
                 .collect(Collectors.toMap(AnalysisNorm::getName, n -> n));
 
         List<Map<String, Object>> report = new ArrayList<>();
-        Workbook wb = WorkbookFactory.create(file.getInputStream());
+        Workbook wb;
+        try {
+            wb = WorkbookFactory.create(file.getInputStream());
+        } catch (IOException | RuntimeException e) {
+            // POI бросает разные исключения на битый или чужой формат — для клиента это всегда 400
+            throw new IllegalArgumentException("Файл повреждён или не является XLSX");
+        }
         try {
             Sheet sheet = wb.getSheetAt(0);
             Row headerRow = sheet.getRow(0);

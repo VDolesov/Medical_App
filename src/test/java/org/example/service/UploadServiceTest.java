@@ -7,14 +7,17 @@ import org.example.model.AnalysisNorm;
 import org.example.model.AnalysisReport;
 import org.example.repository.AnalysisNormRepository;
 import org.example.repository.AnalysisReportRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -61,6 +64,19 @@ class UploadServiceTest {
         List<Map<String, Object>> outOfNorms = (List<Map<String, Object>>) patient.get("outOfNorms");
         assertThat(outOfNorms).hasSize(1);
         assertThat(outOfNorms.get(0).get("status")).isEqualTo("выше нормы");
+    }
+
+    @Test
+    @DisplayName("файл с расширением .xlsx, но не XLSX внутри — IllegalArgumentException, а не 500")
+    void garbageFileIsRejectedAsBadRequest() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "garbage.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "definitely not a workbook".getBytes(StandardCharsets.UTF_8));
+
+        assertThatThrownBy(() -> service.processUpload(1L, "garbage.xlsx", file))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("XLSX");
     }
 
     private MockMultipartFile buildXlsx() throws Exception {

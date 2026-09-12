@@ -182,9 +182,19 @@ public class PdfReportService {
                 }
             }
         }
+        // Разработка на Windows: DejaVu там обычно нет, но Arial покрывает кириллицу
+        String windir = System.getenv("WINDIR");
+        if (windir != null) {
+            File f = new File(new File(windir, "Fonts"), bold ? "arialbd.ttf" : "arial.ttf");
+            if (f.isFile()) {
+                try (InputStream is = new FileInputStream(f)) {
+                    return PDType0Font.load(doc, is, true);
+                }
+            }
+        }
         throw new IOException("TTF-шрифт с поддержкой кириллицы не найден ни в classpath (" + classpath +
-                "), ни в системных каталогах. В Docker-образе ставится через `apk add ttf-dejavu`, " +
-                "либо положите NotoSans в src/main/resources/fonts/.");
+                "), ни в системных каталогах (DejaVu в Linux, Arial в Windows). В Docker-образе ставится через " +
+                "`apk add ttf-dejavu`, либо положите NotoSans в src/main/resources/fonts/.");
     }
 
     private void writeTitle(PDPageContentStream cs, PDFont font, String text, Cursor cur) throws IOException {
