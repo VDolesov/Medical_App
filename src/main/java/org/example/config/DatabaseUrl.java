@@ -45,7 +45,8 @@ public final class DatabaseUrl {
         }
         int port = uri.getPort() == -1 ? 5432 : uri.getPort();
         String path = uri.getPath() == null || uri.getPath().isEmpty() ? "/" : uri.getPath();
-        String query = uri.getRawQuery() == null ? "" : "?" + uri.getRawQuery();
+        // Neon добавляет channel_binding=require — у JDBC-драйвера этот параметр зовётся channelBinding
+        String query = uri.getRawQuery() == null ? "" : "?" + uri.getRawQuery().replace("channel_binding=", "channelBinding=");
         String jdbc = "jdbc:postgresql://" + uri.getHost() + ":" + port + path + query;
         return Optional.of(new Jdbc(jdbc, username, password));
     }

@@ -11,21 +11,30 @@ reportmed.ru (React, статика за Cloudflare)        mobile_v2 (Flutter)
      https://reportmed-api-v3.onrender.com   — этот репозиторий, Dockerfile, Render free
                        │ DATABASE_URL
                        ▼
-                PostgreSQL (Render reportmed-db или Neon)
+                PostgreSQL в Neon (бесплатно, без срока)
 ```
 
 Node-версия (ветка `node-v1`, сервис `reportmed-api` на Render) остаётся резервом,
 пока фронт и мобилка не переключены на новый адрес.
 
-## 1. Render: сервис и база одним Blueprint
+## 1. База в Neon и сервис в Render
 
-1. Render Dashboard → **New → Blueprint** → репозиторий `VDolesov/Medical_App`, ветка `main` → **Apply**.
-   По [render.yaml](render.yaml) создаются база `reportmed-db` и сервис `reportmed-api-v3`.
-2. Первая сборка идёт 5–8 минут (Maven внутри Docker). Готовность:
+Бесплатная PostgreSQL самого Render удаляется через 30 дней после создания (плюс 14 дней
+на апгрейд), поэтому база — в [Neon](https://neon.tech): бесплатный план без срока, 0.5 ГБ,
+засыпает без запросов и просыпается за секунду.
+
+1. Neon → **New project** (регион EU Frankfurt) → на странице проекта **Connect** →
+   скопировать строку вида
+   `postgresql://neondb_owner:…@ep-….eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`.
+   Схему в пустой базе создаст Liquibase при первом старте.
+2. Render Dashboard → **New → Blueprint** → репозиторий `VDolesov/Medical_App`, ветка `main`.
+   Render покажет [render.yaml](render.yaml) и попросит значение `DATABASE_URL` — вставить
+   строку из Neon → **Apply**. Создаётся сервис `reportmed-api-v3` (Docker, free).
+3. Первая сборка идёт 5–8 минут (Maven внутри Docker). Готовность:
    `https://reportmed-api-v3.onrender.com/actuator/health` → `{"status":"UP"}`.
-3. Секреты Render генерирует сам. `ADMIN_SECRET` (код персонала для регистрации врачей и
+4. Секреты Render генерирует сам. `ADMIN_SECRET` (код персонала для регистрации врачей и
    администраторов) смотреть в **сервис → Environment**.
-4. Если имя `reportmed-api-v3` окажется занято, Render добавит суффикс к адресу — тогда
+5. Если имя `reportmed-api-v3` окажется занято, Render добавит суффикс к адресу — тогда
    поправить адрес в `.github/workflows/keepalive.yml`, во фронте и в мобилке.
 
 Переменные окружения сервиса (все заданы в `render.yaml`):
@@ -33,16 +42,14 @@ Node-версия (ветка `node-v1`, сервис `reportmed-api` на Rende
 | Переменная | Значение |
 |---|---|
 | `SPRING_PROFILES_ACTIVE` | `prod` |
-| `DATABASE_URL` | `postgres://user:pass@host/db` — приложение само превращает её в `spring.datasource.*` |
+| `DATABASE_URL` | `postgres://user:pass@host/db?sslmode=require` — приложение само превращает её в `spring.datasource.*` |
 | `JWT_SECRET` | не короче 32 символов |
 | `ADMIN_SECRET` | не короче 16 символов |
 | `CORS_ALLOWED_ORIGINS` | домены фронта через запятую |
 | `JAVA_TOOL_OPTIONS`, `DB_POOL_MAX`, `TOMCAT_THREADS_MAX` | ограничения под 512 МБ free-инстанса |
 
-**База.** Free-план PostgreSQL на Render ограничен по сроку (условия — в Dashboard при
-создании). Бессрочная бесплатная альтернатива — [Neon](https://neon.tech): создать проект,
-взять connection string вида `postgres://…?sslmode=require` и вставить его в `DATABASE_URL`
-сервиса. Схему в любой пустой базе создаёт Liquibase при первом старте.
+Free-инстанс Render засыпает через 15 минут без трафика и просыпается ~30–60 секунд —
+для этого и нужен `keepalive.yml` (раздел 5).
 
 ## 2. Перенос данных из Node-версии
 
@@ -58,9 +65,10 @@ Node-версия (ветка `node-v1`, сервис `reportmed-api` на Rende
 Аналитика и выводы экспертной системы не переносятся — их пересчитывает Java (шаг 5).
 
 1. Собрать jar: `mvn -DskipTests package` → `target/medical-app-0.0.1-SNAPSHOT.jar`.
-2. Строки подключения (нужны **внешние** адреса, с ноутбука):
-   - Node: Render → сервис `reportmed-api` → Environment → `DATABASE_URL`;
-   - Java: Render → `reportmed-db` → Info → *External Database URL* (или строка из Neon).
+2. Строки подключения (обе должны быть доступны с ноутбука):
+   - Node: Render → сервис `reportmed-api` → Environment → `DATABASE_URL`
+     (если база Node тоже на Render — брать *External Database URL*);
+   - Java: строка из Neon (та же, что в `DATABASE_URL` сервиса).
 3. Java-сервис должен стартовать хотя бы раз (схема создана), в базе — ни одного пользователя.
 4. Пробный прогон без записи:
 

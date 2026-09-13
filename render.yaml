@@ -1,5 +1,6 @@
-# Render Blueprint: Java-бэкенд (Docker) + PostgreSQL.
-# Render Dashboard → New → Blueprint → выбрать этот репозиторий → Apply.
+# Render Blueprint: Java-бэкенд (Docker). База — внешняя (Neon), строка подключения
+# запрашивается при применении Blueprint (sync: false).
+# Render Dashboard → New → Blueprint → выбрать этот репозиторий → вставить DATABASE_URL → Apply.
 # Подробности и порядок переезда с Node-версии — в DEPLOY.md.
 services:
   - type: web
@@ -14,12 +15,10 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
-      # Одна строка postgres://… — приложение само раскладывает её в spring.datasource.*.
-      # Чтобы использовать внешнюю базу (Neon и т.п.), просто замените значение в Dashboard.
+      # postgres://user:pass@host/db?sslmode=require — приложение само раскладывает её в spring.datasource.*.
+      # Бесплатная Postgres самого Render удаляется через 30 дней, поэтому база внешняя (Neon).
       - key: DATABASE_URL
-        fromDatabase:
-          name: reportmed-db
-          property: connectionString
+        sync: false
       # Render генерирует случайные значения; ADMIN_SECRET потом смотреть в Dashboard → Environment.
       - key: JWT_SECRET
         generateValue: true
@@ -36,10 +35,3 @@ services:
         value: "1"
       - key: TOMCAT_THREADS_MAX
         value: "20"
-
-databases:
-  - name: reportmed-db
-    plan: free
-    region: frankfurt
-    databaseName: medical
-    user: medical

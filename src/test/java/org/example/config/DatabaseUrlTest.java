@@ -26,6 +26,14 @@ class DatabaseUrlTest {
     }
 
     @Test
+    @DisplayName("строка Neon: sslmode остаётся, channel_binding переименовывается под JDBC-драйвер")
+    void translatesNeonParams() {
+        DatabaseUrl.Jdbc j = DatabaseUrl.parse("postgresql://neondb_owner:npg_x@ep-a1.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require").orElseThrow();
+        assertThat(j.url()).isEqualTo("jdbc:postgresql://ep-a1.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channelBinding=require");
+        assertThat(j.username()).isEqualTo("neondb_owner");
+    }
+
+    @Test
     @DisplayName("jdbc:-строка возвращается без изменений, пустая/чужая -> empty")
     void passesJdbcThroughAndIgnoresOthers() {
         assertThat(DatabaseUrl.parse("jdbc:postgresql://h:5432/d").orElseThrow().url()).isEqualTo("jdbc:postgresql://h:5432/d");
