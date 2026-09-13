@@ -1,20 +1,20 @@
 name: keepalive
 
-# Бесплатные инстансы Render засыпают без трафика — пингуем раз в 10 минут.
-# Запускается только с default-ветки репозитория.
+# Бесплатный инстанс Render засыпает через 15 минут без трафика — пингуем текущий прод
+# раз в 10 минут. Только ОДИН адрес: Render даёт 750 бесплатных часов в месяц на весь
+# аккаунт, а не спящий сервис тратит ~720; два таких выжгут лимит за полмесяца, и Render
+# усыпит оба. При переезде на Java поменять API_URL. Запускается только с default-ветки.
 on:
   schedule:
     - cron: '*/10 * * * *'
   workflow_dispatch:
 
+env:
+  API_URL: https://reportmed-api.onrender.com   # после переезда: https://reportmed-api-v3.onrender.com
+
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Java API (v3)
-        # После первого деплоя проверьте адрес в Render Dashboard и при необходимости поправьте.
-        run: curl -sSf --max-time 90 --retry 3 --retry-delay 10 https://reportmed-api-v3.onrender.com/ping
-        continue-on-error: true
-      - name: Ping Node API (v1, пока не выключен)
-        run: curl -sSf --max-time 90 --retry 3 --retry-delay 10 https://reportmed-api.onrender.com/ping
-        continue-on-error: true
+      - name: Ping API
+        run: curl -sSf --max-time 90 --retry 3 --retry-delay 10 "$API_URL/ping"

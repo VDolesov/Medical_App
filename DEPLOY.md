@@ -110,12 +110,29 @@ cd mobile_v2
 flutter build apk --release --dart-define=API_BASE_URL=https://reportmed-api-v3.onrender.com
 ```
 
-## 5. После переключения
+## 5. Порядок переключения и вывод Node из эксплуатации
 
-- `.github/workflows/keepalive.yml` пингует оба API каждые 10 минут (работает только с
-  default-ветки). Когда Node больше не нужен — убрать второй шаг и остановить сервис
-  `reportmed-api` на Render.
-- Ветка `node-v1` остаётся в репозитории как архив Node-версии.
+Free-план Render даёт 750 часов в месяц на весь аккаунт; сервис под keepalive не спит и
+тратит ~720. Поэтому `keepalive.yml` пингует только один адрес (`API_URL`) — текущий прод.
+
+1. **Старый Node-сервис `reportmed-api`** сразу: Settings → Build & Deploy → Branch → `node-v1`
+   (или Auto-Deploy → Off). Иначе каждый пуш в `main` запускает у него сборку Java, которая
+   падает и тратит build-минуты. Больше его не трогать — он прод до переключения фронта.
+2. **База Node** — источник миграции, ничего не менять. Перед миграцией снять дамп на всякий
+   случай: `pg_dump "<DATABASE_URL Node>" -Fc -f node-backup.dump`
+   (Windows: `"C:\Program Files\PostgreSQLin\pg_dump.exe"`).
+3. Развернуть Java (раздел 1), сделать пробную миграцию (раздел 2), проверить: вход своим
+   аккаунтом, список отчётов, аналитика, PDF.
+4. **День переключения.** Данные, добавленные в Node после пробной миграции, в Java не
+   попадут, поэтому миграцию повторяют начисто:
+   - Neon → SQL Editor: `DROP SCHEMA public CASCADE; CREATE SCHEMA public;`
+   - Render → сервис → Manual Deploy → *Restart* — Liquibase пересоздаст схему;
+   - миграция (раздел 2) и `regenerate_analytics.py`;
+   - фронт (раздел 3) и мобилка (раздел 4);
+   - `keepalive.yml`: `API_URL` → адрес Java-сервиса.
+5. Через 1–2 недели без проблем: Node-сервис → Settings → **Suspend** (не удалять сразу —
+   это откат за минуту), позже Delete. Базу Node удалить после того, как дамп сохранён.
+6. Ветка `node-v1` остаётся в репозитории как архив Node-версии.
 
 ## Локально
 
