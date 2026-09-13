@@ -22,6 +22,10 @@
 - **PDF-отчёты** по результатам анализов (PDFBox)
 - **Swagger UI**: документация API на `/swagger-ui.html`
 
+## Развёртывание
+
+Прод на Render (Blueprint `render.yaml`), перенос данных из Node-версии, переключение фронта и мобилки — в [DEPLOY.md](DEPLOY.md).
+
 ## Быстрый старт (Docker)
 
 ```bash
