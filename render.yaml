@@ -7,7 +7,7 @@ services:
     name: reportmed-api-v3
     runtime: docker
     plan: free
-    region: frankfurt
+    region: ohio   # база Neon в AWS US East 2 (Ohio) — сервис рядом с ней
     branch: main
     dockerfilePath: ./Dockerfile
     healthCheckPath: /actuator/health
